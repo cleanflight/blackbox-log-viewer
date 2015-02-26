@@ -405,14 +405,14 @@ function configureGraphs() {
              y: 0.25,
              height: 0.40
          },
-		 {
-			label: "Servos",
-			fields: [
-				{name: "servo[5]", curve: servoCurve, smoothing: motorSmoothing},
-			],
-			y: 0.50,
-			height: 0.40			
-		 },
+         {
+             label: "Servos",
+             fields: [
+                 {name: "servo[5]", curve: servoCurve, smoothing: motorSmoothing},
+             ],
+             y: 0.50,
+             height: 0.40			
+         },
          {
              label: "Gyros",
              fields: [

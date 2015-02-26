@@ -89,8 +89,8 @@ var FlightLogParser = function(logData) {
             maxthrottle: 1850,
             currentMeterOffset: 0,
             currentMeterScale: 400,
-			minservo: 1020,
-			maxservo: 2000
+            minservo: 1020,
+            maxservo: 2000
         },
             
         frameTypes,
