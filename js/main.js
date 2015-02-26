@@ -387,7 +387,7 @@ function configureGraphs() {
         gyroCurve = new ExpoCurve(0, 0.25, 9.0e-6 / sysConfig.gyroScale, 1.0, 10),
         accCurve = new ExpoCurve(0, 0.7, 5000, 1.0, 10),
         pidCurve = new ExpoCurve(0, 0.7, 500, 1.0, 10),
-		servoCurve = new ExpoCurve(-(sysConfig.maxservo + sysConfig.minservo) / 2, 1.0,
+        servoCurve = new ExpoCurve(-(sysConfig.maxservo + sysConfig.minservo) / 2, 1.0,
             (sysConfig.maxservo - sysConfig.minservo) / 2, 1.0, 0),
         
         motorSmoothing = 5000,
