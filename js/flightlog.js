@@ -6,7 +6,7 @@
  */
 function FlightLog(logData) {
     var
-        ADDITIONAL_COMPUTED_FIELD_COUNT = 6, /** attitude + PID_SUM **/
+        ADDITIONAL_COMPUTED_FIELD_COUNT = 7, /** attitude + PID_SUM **/
     
         that = this,
         logIndex = false,
@@ -163,8 +163,10 @@ function FlightLog(logData) {
         // Make an independent copy
         fieldNames = parser.mainFieldNames.slice(0);
         
+        // Add computed field names
         fieldNames.push("heading[0]", "heading[1]", "heading[2]");
         fieldNames.push("axisSum[0]", "axisSum[1]", "axisSum[2]");
+        fieldNames.push("usingAccForAttitude");
         
         fieldNameToIndex = {};
         for (i = 0; i < fieldNames.length; i++) {
@@ -468,6 +470,18 @@ function FlightLog(logData) {
                             (axisPID[axis][1] !== undefined ? srcFrame[axisPID[axis][1]] : 0) +
                             (axisPID[axis][2] !== undefined ? srcFrame[axisPID[axis][2]] : 0);
                     }
+                    
+                    // Replicate the accMag computation that CF uses to decide if ACC data should contribute to attitude estimation
+                    var
+                        accMag;
+                    
+                    for (var axis = 0; axis < 3; axis++) {
+                        accMag += srcFrame[accSmooth[axis]] * srcFrame[accSmooth[axis]];
+                    }
+                    
+                    accMag = ~~(accMag * 100 / (sysConfig.acc_1G * sysConfig.acc_1G));
+                    
+                    destFrame[fieldIndex++] = (accMag > 72 && accMag < 133) ? 1 : 0;
                 }
             }
         }

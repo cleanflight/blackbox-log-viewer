@@ -249,6 +249,13 @@ GraphConfig.PALETTE = [
                 inputRange: Math.PI,
                 outputRange: 1.0
             };
+        } else if (fieldName == "usingAccForAttitude") {
+            return {
+                offset: 0,
+                power: 1.0,
+                inputRange: 1.0,
+                outputRange: 1.0
+            };
         } else {
             // Scale and center the field based on the whole-log observed ranges for that field
             var
