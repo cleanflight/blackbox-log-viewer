@@ -881,7 +881,7 @@ var FlightLogParser = function(logData) {
             	var tmp = stream.readU8();
             	lastEvent.data.name = 'Unknown';
              	lastEvent.data.func = tmp & 127;
-            	lastEvent.data.value = tmp < 128 ? stream.readU32() : uint32Tofloat(stream.readU32());
+            	lastEvent.data.value = tmp < 128 ? stream.readU32() : uint32ToFloat(stream.readU32());
             	if (INFLIGHT_ADJUSTMENT_FUNCTIONS[lastEvent.data.func] !== undefined) {
             		var descr = INFLIGHT_ADJUSTMENT_FUNCTIONS[lastEvent.data.func];
             		lastEvent.data.name = descr.name;
@@ -893,7 +893,7 @@ var FlightLogParser = function(logData) {
             			scale = descr.scalef;
             		}
             		lastEvent.data.value = Math.round((lastEvent.data.value * scale) * 10000) / 10000;
-        		}
+            	}
             break;
             case FlightLogEvent.LOG_END:
                 var endMessage = stream.readString(END_OF_LOG_MESSAGE.length);
