@@ -122,6 +122,15 @@ var ArrayDataStream;
         
         return b1 | (b2 << 8); 
     };
+    	
+    ArrayDataStream.prototype.readU32 = function() {
+        var 
+            b1 = this.readByte(),
+            b2 = this.readByte(),
+        	b3 = this.readByte(),
+        	b4 = this.readByte();
+        return b1 | (b2 << 8) | (b3 << 16) | (b4 << 24); 
+    };
     
     /**
      * Search for the string 'needle' beginning from the current stream position up
