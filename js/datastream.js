@@ -122,7 +122,7 @@ var ArrayDataStream;
         
         return b1 | (b2 << 8); 
     };
-    	
+    
     ArrayDataStream.prototype.readU32 = function() {
         var 
             b1 = this.readByte(),
