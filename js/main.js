@@ -787,6 +787,12 @@ function BlackboxLogViewer() {
             e.preventDefault();
         });
         
+        $('.log-button-fullscreen').click(function() {
+            $('.log-button-fullscreen').toggleClass("glyphicon-resize-full glyphicon-resize-small");
+            $('.container, .container-fluid').toggleClass("container container-fluid");
+            $(window).trigger('resize');
+        });
+        
         seekBar.onSeek = setCurrentBlackboxTime;
     });
 }

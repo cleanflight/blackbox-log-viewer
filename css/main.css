@@ -81,22 +81,34 @@ html, body {
     height:100%;
 }
 
-.log-close-legend-dialog {
+.log-buttonholder-topright {
     float: right;
-    font-size: 14px;
+}
+.log-button-fullscreen {
     color: #bbb;
-    position: relative;
-    top: -10px;
+    padding: 5px;
+    margin: 8px 6px;
+    font-size: 14px;
     cursor: pointer;
 }
 
 .log-open-legend-dialog {
-    float: right;
     color: #bbb;
-    padding-right: 14px;
-    padding-top: 8px;
+    padding: 5px;
+    margin: 8px 6px;
     font-size: 14px;
     display: none;
+    cursor: pointer;
+}
+
+.log-close-legend-dialog {
+    font-size: 14px;
+    color: #bbb;
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    padding: 5px;
+    margin: 8px 6px;
     cursor: pointer;
 }
 
@@ -117,6 +129,7 @@ html, body {
 }
 
 .log-graph-config {
+    position: relative;
     background-color:#222;
     color:#bbb;
     padding:1em;
