@@ -26,8 +26,8 @@ var
     }),
     
     FLIGHT_LOG_FLIGHT_MODE_NAME = makeReadOnly([
-        "ANGLE_MODE",
-        "HORIZON_MODE",
+        "ANGLE",
+        "HORIZON",
         "MAG",
         "BARO",
         "GPS_HOME",
@@ -35,7 +35,9 @@ var
         "HEADFREE",
         "AUTOTUNE",
         "PASSTHRU",
-        "SONAR"
+        "SONAR",
+        "FAILSAFE",
+        "GTUNE"
     ]),
 
     FLIGHT_LOG_FLIGHT_STATE_NAME = makeReadOnly([
