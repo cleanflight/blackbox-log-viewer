@@ -48,7 +48,10 @@ function GraphConfigurationDialog(dialog, onSave) {
             graphElem = $(
                 '<li class="config-graph">'
                     + '<dl>'
-                        + '<dt><h4>Graph ' + (index + 1) + '</dt>'
+                        + '<dt><span>' 
+                            + '<h4 style="display:inline-block;vertical-align: baseline;">Graph ' + '<span class="graph-index-number">' + (index + 1) + '</span>' + '</h4>' 
+                            + '<button type="button" class="btn btn-default btn-sm pull-right remove-single-graph-button" style="display:inline-block;vertical-align: baseline;">Remove graph ' + '</button>'    
+                        + '</span></dt>'                     
                         + '<dd>'
                             + '<div class="form-horizontal">'
                                 + '<div class="form-group">'
@@ -61,7 +64,7 @@ function GraphConfigurationDialog(dialog, onSave) {
                                     + '<label class="col-sm-2 control-label">Fields</label>'
                                     + '<div class="col-sm-10">'
                                         + '<ul class="config-graph-field-list form-inline list-unstyled"></ul>'
-                                        + '<button type="button" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-plus"></span> Add field</button>'
+                                        + '<button type="button" class="btn btn-default btn-sm add-field-button"><span class="glyphicon glyphicon-plus"></span> Add field</button>'
                                     + '</div>'
                                 + '</div>'
                             + '</div>'
@@ -74,11 +77,19 @@ function GraphConfigurationDialog(dialog, onSave) {
         $("input", graphElem).val(graph.label);
         
         // "Add field" button
-        $("button", graphElem).click(function(e) {
+        $(".add-field-button", graphElem).click(function(e) {
             fieldList.append(renderField({}));
             e.preventDefault();
         });
         
+        // "Remove Graph" button
+        $(".remove-single-graph-button", graphElem).click(function(e) {
+            var parentGraph = $(this).parents('.config-graph');
+            parentGraph.remove();
+            updateRemoveAllButton();
+            e.preventDefault();
+        });
+                
         for (var i = 0; i < graph.fields.length; i++) {
             var 
                 field = graph.fields[i],
@@ -92,14 +103,11 @@ function GraphConfigurationDialog(dialog, onSave) {
                 parentGraph = $(this).parents('.config-graph');
             
             $(this).parents('.config-graph-field').remove();
-            
-            // Remove the graph upon removal of the last field
-            if ($(".config-graph-field", parentGraph).length === 0) {
-                parentGraph.remove();
-            }
-            
+                        
             e.preventDefault();
         });
+        
+        updateRemoveAllButton();
         
         return graphElem;
     }
@@ -114,6 +122,27 @@ function GraphConfigurationDialog(dialog, onSave) {
             graphList.append(renderGraph(i, graphs[i]));
         }
     }
+
+    // Show/Hide remove all button    
+    function updateRemoveAllButton() {
+        var graphCount = $('.config-graph').length;
+        if (graphCount > 0) {
+            $('.config-graphs-remove-all-graphs').show();
+        } else {
+            $('.config-graphs-remove-all-graphs').hide();
+        }
+        renumberGraphIndexes();
+    }
+    
+    // Renumber the "Graph X" blocks after additions/deletions
+    function renumberGraphIndexes() {
+        var graphIndexes = $('.graph-index-number');
+        var graphCount = graphIndexes.length;
+        for (var i = 0; i < graphCount; i++) {
+            var currentGraphNumber = i+1;
+            $(graphIndexes[i]).html(currentGraphNumber);
+        }
+    }    
     
     function populateExampleGraphs(flightLog, menu) {
         var
@@ -255,10 +284,21 @@ function GraphConfigurationDialog(dialog, onSave) {
             graphElem = renderGraph($(".config-graph", dialog).length, graph);
         
         $(".config-graphs-list", dialog).append(graphElem);
+        updateRemoveAllButton();
         
         // Dismiss the dropdown button
         exampleGraphsButton.dropdown("toggle");
         
         e.preventDefault();
     });
+    
+    // Remove all Graphs button
+    var removeAllGraphsButton = $(".config-graphs-remove-all-graphs");
+    
+    removeAllGraphsButton.on("click", function() {
+        $('.config-graph').remove();
+        updateRemoveAllButton();
+    });
+    
+    
 }
