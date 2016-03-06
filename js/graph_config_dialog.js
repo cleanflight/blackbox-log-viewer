@@ -106,9 +106,7 @@ function GraphConfigurationDialog(dialog, onSave) {
                         
             e.preventDefault();
         });
-        
-        updateRemoveAllButton();
-        
+
         return graphElem;
     }
     
@@ -121,9 +119,10 @@ function GraphConfigurationDialog(dialog, onSave) {
         for (var i = 0; i < graphs.length; i++) {
             graphList.append(renderGraph(i, graphs[i]));
         }
+        updateRemoveAllButton();                
     }
 
-    // Show/Hide remove all button    
+    // Show/Hide remove all button
     function updateRemoveAllButton() {
         var graphCount = $('.config-graph').length;
         if (graphCount > 0) {
