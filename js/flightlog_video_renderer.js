@@ -186,7 +186,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
             };
         
         if (logParameters.flightVideo) {
-            var 
+            var
                 renderFrames = function(frameCount) {
                     if (frameCount == 0) {
                         completeChunk();
@@ -285,7 +285,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
     }
     
     graph = new FlightLogGrapher(flightLog, logParameters.graphConfig, canvas, craftCanvas, {
-        eraseBackground : !logParameters.flightVideo
+        background: logParameters.flightVideo ? "none" : "fill"
     });
     
     craftCanvasLeft = parseInt($(craftCanvas).css('left'), 10);
