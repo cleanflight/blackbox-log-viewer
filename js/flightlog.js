@@ -401,6 +401,8 @@ function FlightLog(logData) {
                 parser.resetDataState();
                 
                 //Prime the parser with the previous state we get from the flightlog index, so it can base deltas off that data
+                parser.setTimeRolloverAccumulator(iframeDirectory.initialTimeRolloverAccumulator[chunkIndex]);
+                
                 if (iframeDirectory.initialGPSHome) {
                     parser.setGPSHomeHistory(iframeDirectory.initialGPSHome[chunkIndex]);
                 }
