@@ -1,0 +1,18 @@
+{
+  "name": "cleanflight-blackbox-explorer",
+  "productName": "Cleanflight Blackbox Explorer",
+  "version": "1.0.0",
+  "description": "Analyze your Cleanflight and Betaflight flight logs",
+  "main": "main/index.js",
+  "repository": "https://github.com/cleanflight/blackbox-log-viewer.git",
+  "author": "Nicholas Sherlock <n.sherlock@gmail.com>",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "electron-auto-updater": "^0.6.2",
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-window-state": "^4.0.1",
+    "jquery": "^3.1.1",
+    "webm-writer": "^0.2.1"
+  }
+}

@@ -5,9 +5,7 @@ function VideoExportDialog(dialog, onSave) {
         DIALOG_MODE_SETTINGS = 0,
         DIALOG_MODE_IN_PROGRESS = 1,
         DIALOG_MODE_COMPLETE = 2,
-        
-        currentGraphConfig,
-        flightLogDataArray,
+      
         dialogMode,
         
         videoRenderer = false,
@@ -194,8 +192,6 @@ function VideoExportDialog(dialog, onSave) {
                         
                         if (writtenBytes > 1000000) { // Wait for the first significant chunk to be written (don't use the tiny header as a size estimate)
                             progressSize.text(formatFilesize(writtenBytes) + " / " + formatFilesize(estimatedBytes));
-                            
-                            fileSizeWarning.toggle(!videoRenderer.willWriteDirectToDisk() && estimatedBytes >= 475 * 1024 * 1024);
                         }
                     }
                 }

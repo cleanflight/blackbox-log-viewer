@@ -1,4 +1,5 @@
 /.settings/
 /.project
 .DS_Store
-/blackbox-chrome-app.zip
+node_modules
+/dist/

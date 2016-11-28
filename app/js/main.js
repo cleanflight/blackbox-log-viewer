@@ -1,15 +1,10 @@
 "use strict";
 
+const
+    {app} = require('electron').remote;
+
 function BlackboxLogViewer() {
-    function supportsRequiredAPIs() {
-        return window.File && window.FileReader && window.FileList && Modernizr.canvas;
-    }
-    
-    if (!supportsRequiredAPIs()) {
-        alert("Your browser does not support the APIs required for reading log files.");
-    }
-    
-    var
+    const
         GRAPH_STATE_PAUSED = 0,
         GRAPH_STATE_PLAY = 1,
         
@@ -675,31 +670,19 @@ function BlackboxLogViewer() {
             graphConfigDialog.show(flightLog, graphConfig);
         });
 
-        if (FlightLogVideoRenderer.isSupported()) {
-            $(".btn-video-export").click(function(e) {
-                setGraphState(GRAPH_STATE_PAUSED);
-    
-                exportDialog.show(flightLog, {
-                    graphConfig: activeGraphConfig,
-                    inTime: videoExportInTime,
-                    outTime: videoExportOutTime,
-                    flightVideo: hasVideo ? video.cloneNode() : false,
-                    flightVideoOffset: videoOffset
-                }, videoConfig);
-                
-                e.preventDefault();
-            });
-        } else {
-            $(".btn-video-export")
-                .addClass('disabled')
-                .css('pointer-events', 'all !important')
-                .attr({
-                    'data-toggle': 'tooltip',
-                    'data-placement': 'bottom',
-                    'title': "Not supported by your browser, use Google Chrome instead"
-                })
-                .tooltip();
-        }
+        $(".btn-video-export").click(function(e) {
+            setGraphState(GRAPH_STATE_PAUSED);
+
+            exportDialog.show(flightLog, {
+                graphConfig: activeGraphConfig,
+                inTime: videoExportInTime,
+                outTime: videoExportOutTime,
+                flightVideo: hasVideo ? video.cloneNode() : false,
+                flightVideoOffset: videoOffset
+            }, videoConfig);
+            
+            e.preventDefault();
+        });
 
         $(window).resize(updateCanvasSize);
         
@@ -784,6 +767,8 @@ function BlackboxLogViewer() {
         });
         
         seekBar.onSeek = setCurrentBlackboxTime;
+        
+        $(".app-version").text("v" + app.getVersion());
     });
 }
 

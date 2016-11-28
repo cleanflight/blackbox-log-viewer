@@ -8,28 +8,38 @@ be played behind the log. You can export the graphs as a WebM video to share wit
 
 ## Installation
 
-There are three methods of installation available:
+You can grab our desktop app for Windows (32 and 64 bit), macOS and Linux (.deb) from our
+[GitHub releases page](https://github.com/cleanflight/blackbox-log-viewer/releases).
 
-### Chrome Web Store method
+On Windows, download the ".exe" installer, run it, and you should end up with an icon on your desktop.
 
-The easiest way to get the explorer (if you have Google Chrome) is to install it from the Chrome Web Store:
+On macOS, download the ".dmg" archive. Open it up, and drag the Blackbox Explorer icon to the Applications
+folder to install it.
 
-https://chrome.google.com/webstore/detail/cleanflight-blackbox-expl/cahpidddaimdojnddnahjpnefajpheep
+On Debian-based Linux (such as Ubuntu), download the ".deb" package that matches your architecture (32 or 64 bit). 
+You can install that on Ubuntu with something like:
 
-This will add it to your computer as a Chrome App.
+```
+dpkg -i cleanflight-blackbox-explorer_1.0.0_amd64.deb
 
-### Manual Chrome App install
-Download the contents of this repository by clicking the "download ZIP" button on the right of this page. Unpack
-the zip somewhere on your computer. In Google Chrome, open up the Extensions page, tick the "developer mode" tickbox, 
-click the "load unpacked extension" button, and point it at the unpacked folder. This will add it as a Chrome App.
+# Install any dependencies that prevented the deb from finishing installation:
+apt-get install -f
+```
 
-### Run as a webpage
-Download the contents of this repository by clicking the "download ZIP" button on the right of this page. Unpack
-the zip somewhere on your computer, and double click "index.html" file to open it with your web browser. 
+After installing, Blackbox Explorer will automatically keep itself up to date on Windows and macOS. You'll
+need to manually download new versions on Linux.
 
-Note that the "video export" feature is only available when opened with Google Chrome. Also, running it this way will 
-limit the exported flight video to 500MB in size. Use one of the previous Chrome App install methods to unlock 
-&gt;500MB video export.
+## Running from source without installation
+
+If you're a developer, you can run Blackbox Explorer without installing one of our binary releases.
+Clone this repository, install Node JS (I suggest the 6.9 LTS release), and run "npm install" in the root of our repo in order to fetch
+our dependencies. Now you can launch the application by running "npm start", or start it with the JavaScript
+inspector enabled with "npm run debug".
+
+## Legacy browser / Chrome version
+
+We're dropping support for our old "Chrome App" version, since Chrome will drop support for Chrome apps in 2017. 
+You can still find that [legacy version here](https://github.com/cleanflight/blackbox-log-viewer/tree/chrome-legacy) if you want it.
 
 ## Usage
 Click the "Open log file/video" button at the top right and select your logged ".TXT" file and your flight video (if 
@@ -55,14 +65,9 @@ Or you may want to plot vbat against throttle to examine your battery's performa
 
 ## Notes
 
-This tool has not been tested on Internet Explorer, but definitely won't work on versions earlier than version 9.
-
 Your web browser must support the video codec that your flight video uses in order to play it. Firefox doesn't support
 H.264 videos on Mac, so if your video won't play, try Google Chrome instead. If it still won't play, follow the 
 instructions in the next section to convert your video using Handbrake.
-
-The best performing web browser tends to be Google Chrome, especially when trying to play your flight video at the same
-time.
 
 This tool is currently in the Beta stage, so a number of key features have yet to be implemented:
 

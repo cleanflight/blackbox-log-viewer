@@ -1,5 +1,11 @@
 "use strict";
 
+const
+    {dialog} = require('electron').remote,
+    fs = require('fs'),
+    
+    WebMWriter = require('webm-writer');
+
 /**
  * Render a video of the given log using the given videoOptions (user video settings) and logParameters.
  * 
@@ -83,44 +89,31 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
         }
     }
     
-    function supportsFileWriter() {
-        return !!(chrome && chrome.fileSystem);
-    }
-    
     /**
-     * Returns a Promise that resolves to a FileWriter for the file the user chose, or fails if the user cancels/
+     * Returns a Promise that resolves to a fd for the file the user chose, or fails if the user cancels/
      * something else bad happens.
      */
-    function openFileForWrite(suggestedName, onComplete) {
+    function openFileForWrite(suggestedName) {
         return new Promise(function(resolve, reject) {
-            chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: suggestedName, 
-                    accepts: [{extensions: ['webm']}]}, function(fileEntry) {
-                var 
-                    error = chrome.runtime.lastError;
-                
-                if (error) {
-                    if (error.message == "User cancelled") {
-                        reject(null);
-                    } else {
-                        reject(error.message);
+            dialog.showSaveDialog({
+                title: "Write video to file...",
+                defaultPath: suggestedName,
+                filters: [
+                    {
+                        name: "WebM video",
+                        extensions: ["webm"]
                     }
+                ]
+            }, function(filename) {
+                if (!filename) {
+                    reject(null);
                 } else {
-                    fileEntry.createWriter(function (fileWriter) {
-                        fileWriter.onerror = function (e) {
-                            console.error(e);
-                        };
-                        
-                        fileWriter.onwriteend = function() {
-                            fileWriter.onwriteend = null;
-                            
-                            resolve(fileWriter);
-                        };
-                        
-                        // If the file already existed then we need to truncate it to avoid doing a partial rewrite
-                        fileWriter.truncate(0);
-                    }, function (e) {
-                        // File is not readable or does not exist!
-                        reject(e);
+                    fs.open(filename, "w", (err, fd) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+	                        resolve(fd);
+                        }
                     });
                 }
             });
@@ -136,11 +129,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
     }
     
     function finishRender() {
-        videoWriter.complete().then(function(webM) {
-            if (webM) {
-                window.saveAs(webM, "video.webm");
-            }
-            
+        videoWriter.complete().then(function() {
             notifyCompletion(true, frameIndex);
         });
     }
@@ -245,20 +234,15 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
                 frameRate: videoOptions.frameRate,
             };
         
-        if (supportsFileWriter()) {
-            openFileForWrite("video.webm").then(function(fileWriter) {
-                webMOptions.fileWriter = fileWriter;
-                
-                videoWriter = new WebMWriter(webMOptions);
-                renderChunk();
-            }, function(error) {
-                console.error(error);
-                notifyCompletion(false);
-            });
-        } else {
+        openFileForWrite("video.webm").then(function(fd) {
+            webMOptions.fd = fd;
+            
             videoWriter = new WebMWriter(webMOptions);
             renderChunk();
-        }
+        }, function(error) {
+            console.error(error);
+            notifyCompletion(false);
+        });
     };
     
     /**
@@ -267,15 +251,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
     this.getWrittenSize = function() {
         return videoWriter ? videoWriter.getWrittenSize() : 0;
     };
-    
-    /**
-     * Returns true if the video can be saved directly to disk (bypassing memory caching). If so, the user
-     * will be prompted for a filename when the start() method is called.
-     */
-    this.willWriteDirectToDisk = function() {
-        return supportsFileWriter();
-    };
-    
+
     canvas.width = videoOptions.width;
     canvas.height = videoOptions.height;
 
@@ -308,19 +284,3 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
         logParameters.flightVideo.muted = true;
     }
 }
-
-/**
- * Is video rendering supported on this web browser? We require the ability to encode canvases to WebP.
- */
-FlightLogVideoRenderer.isSupported = function() {
-    var
-        canvas = document.createElement('canvas');
-    
-    canvas.width = 16;
-    canvas.height = 16;
-    
-    var
-        encoded = canvas.toDataURL('image/webp', {quality: 0.9});
-    
-    return encoded && encoded.match(/^data:image\/webp;/);
-};

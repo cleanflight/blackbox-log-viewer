@@ -1,18 +1,21 @@
 <!DOCTYPE html>
-<html class="no-js">
+<html>
 <head>
 <meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <title></title>
 <meta name="description" content="">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<link rel="stylesheet" href="css/bootstrap.min.css">
-<link rel="stylesheet" href="css/bootstrap-theme.min.css">
+<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.css">
+<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap-theme.css">
 <link rel="stylesheet" href="css/jquery.nouislider.min.css">
 <link rel="stylesheet" href="css/main.css">
 
-<script src="js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+<script>
+    window.$ = window.jQuery = require('jquery');
+    require('bootstrap');
+</script>
+
 </head>
 <body>
     <nav class="navbar navbar-inverse navbar-static-top" role="navigation">
@@ -35,7 +38,7 @@
     <div class="welcome-pane">
         <div class="container">
             <div class="jumbotron">
-                <h1>Welcome to Blackbox Explorer!</h1>
+                <h1>Welcome to Blackbox Explorer!<small class="app-version"></small></h1>
                 <p>This tool allows you to view and analyze logs created by Cleanflight's Blackbox feature.</p>
                 <span class="btn btn-primary btn-lg btn-file"> Open log file/video <input type="file" class="file-open" multiple></span>
             </div>
@@ -378,7 +381,6 @@
                                 <label class="col-sm-3 control-label">File size</label>
                                 <div class="col-sm-9">
                                     <p class="form-control-static video-export-size"></p>
-                                    <div class="alert alert-danger" role="alert">You must install this tool as a Chrome App in order to export videos larger than 500MB</div>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -402,13 +404,9 @@
         </div>
     </div>
 
-    <script src="js/vendor/jquery-1.11.3.min.js"></script>
-    <script src="js/vendor/bootstrap.min.js"></script>
     <script src="js/vendor/jquery.ba-throttle-debounce.js"></script>
     <script src="js/vendor/three.min.js"></script>
     <script src="js/vendor/jquery.nouislider.all.min.js"></script>
-    <script src="js/vendor/FileSaver.js"></script>
-    <script src="js/vendor/webm-writer-0.1.1.js"></script>
     <script src="js/pref_storage.js"></script>
     <script src="js/tools.js"></script>
     <script src="js/cache.js"></script>

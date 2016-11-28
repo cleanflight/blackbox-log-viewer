@@ -19,6 +19,12 @@ html, body {
     }
 }
 
+.app-version {
+    font-size:50%;
+    margin-left: 0.25em;
+    opacity: 0.5;
+}
+
 .log-info {
     max-width: 30em;
 }
