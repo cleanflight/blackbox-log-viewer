@@ -1,10 +1,32 @@
 "use strict";
 
 const
-    {dialog} = require('electron').remote,
     fs = require('fs'),
+    path = require('path'),
+	EventEmitter = require('events'),
     
-    WebMWriter = require('webm-writer');
+    WebMWriter = require('webm-writer'),
+	
+	FlightLogGrapher = require("./grapher.js"),
+    {leftPad} = require("./misc.js");
+
+/**
+ * Decode a Base64 data URL into a Buffer.
+ *
+ * @param url {string}
+ * @returns {Buffer}
+ */
+function decodeBase64PNGDataURL(url) {
+	if (typeof url !== "string" || !url.match(/^data:image\/png;base64,/i)) {
+		return null;
+	}
+	
+	return Buffer.from(url.substring("data:image\/png;base64,".length), "base64");
+}
+
+function canvasToPNG(canvas) {
+	return decodeBase64PNGDataURL(canvas.toDataURL('image/png'));
+}
 
 /**
  * Render a video of the given log using the given videoOptions (user video settings) and logParameters.
@@ -19,21 +41,29 @@ const
  *     flightVideoOffset - Offset of flight video start time relative to start of log in seconds
  *
  * videoOptions - Object with these fields:
+ *     filename   - For WebM video, the file to export to, for PNG the name of the file will be used as a prefix
  *     frameRate
  *     width
  *     height
  *     videoDim   - Amount of dimming applied to background video from 0.0 to 1.0
+ *     format     - webm or png
  *
- * events - Object with these fields:
- *     onComplete - On render completion, called with (success, frameCount)
- *     onProgress - Called periodically with (frameIndex, frameCount) to report progress
+ * Emits these events:
+ *     complete - On render completion, called with (success, frameCount)
+ *     progress - Called periodically with (frameIndex, frameCount) to report progress
  */
-function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) {
-    var
+function FlightLogVideoRenderer(flightLog, logParameters, videoOptions) {
+    const
         WORK_CHUNK_SIZE_FOCUSED = 8,
         WORK_CHUNK_SIZE_UNFOCUSED = 32,
         
-        videoWriter,
+        that = this;
+        
+    var
+	    /**
+         * @type {WebMWriter}
+	     */
+	    videoWriter,
         
         canvas = document.createElement('canvas'),
         craftCanvas = document.createElement('canvas'),
@@ -43,7 +73,11 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
         
         frameCount, frameDuration /* Duration of a frame in Blackbox's microsecond time units */,
         frameTime, frameIndex,
+        writtenBytes,
+	    videoFd,
         cancel = false,
+        
+        filenameTemplate,
         
         workChunkSize = WORK_CHUNK_SIZE_FOCUSED,
         hidden, visibilityChange,
@@ -89,47 +123,29 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
         }
     }
     
-    /**
-     * Returns a Promise that resolves to a fd for the file the user chose, or fails if the user cancels/
-     * something else bad happens.
-     */
-    function openFileForWrite(suggestedName) {
-        return new Promise(function(resolve, reject) {
-            dialog.showSaveDialog({
-                title: "Write video to file...",
-                defaultPath: suggestedName,
-                filters: [
-                    {
-                        name: "WebM video",
-                        extensions: ["webm"]
-                    }
-                ]
-            }, function(filename) {
-                if (!filename) {
-                    reject(null);
-                } else {
-                    fs.open(filename, "w", (err, fd) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-	                        resolve(fd);
-                        }
-                    });
-                }
-            });
-        });
+    function createFrameFilename(frameIndex) {
+        return filenameTemplate.replace("$1", leftPad(frameIndex, "0", 7));
     }
 
     function notifyCompletion(success, frameCount) {
         removeVisibilityHandler();
         
-        if (events && events.onComplete) {
-            events.onComplete(success, frameCount);
-        }
+        that.emit("complete", success, frameCount);
     }
     
     function finishRender() {
-        videoWriter.complete().then(function() {
+        var
+            complete;
+        
+        if (videoOptions.format == "webm") {
+            complete = videoWriter.complete().then(function() {
+	            fs.closeSync(videoFd);
+            })
+        } else {
+            complete = Promise.resolve();
+        }
+        
+        complete.then(function() {
             notifyCompletion(true, frameIndex);
         });
     }
@@ -152,9 +168,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
         
         var
             completeChunk = function() {
-                if (events && events.onProgress) {
-                    events.onProgress(frameIndex, frameCount);
-                }
+                that.emit("progress", frameIndex, frameCount, that.getWrittenSize());
                 
                 if (frameIndex >= frameCount) {
                     finishRender();
@@ -168,7 +182,18 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
                 
                 canvasContext.drawImage(craftCanvas, craftCanvasLeft, craftCanvasTop);
                 
-                videoWriter.addFrame(canvas);
+                if (videoOptions.format == "webm") {
+	                videoWriter.addFrame(canvas);
+                } else {
+                    var
+	                    fd = fs.openSync(createFrameFilename(frameIndex), "w"),
+                        frame = canvasToPNG(canvas);
+                    
+                    fs.writeFileSync(fd, frame);
+                    writtenBytes += frame.length;
+                    
+                    fs.closeSync(fd);
+                }
                 
                 frameIndex++;
                 frameTime += frameDuration;
@@ -226,30 +251,50 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
         
         frameTime = logParameters.inTime;
         frameIndex = 0;
+        writtenBytes = 0;
         
         installVisibilityHandler();
         
         var
-            webMOptions = {
-                frameRate: videoOptions.frameRate,
-            };
+            prepareRender;
         
-        openFileForWrite("video.webm").then(function(fd) {
-            webMOptions.fd = fd;
-            
-            videoWriter = new WebMWriter(webMOptions);
-            renderChunk();
-        }, function(error) {
-            console.error(error);
-            notifyCompletion(false);
-        });
+        if (videoOptions.format == "webm") {
+	        prepareRender = new Promise(function(resolve) {
+		        videoFd = fs.openSync(videoOptions.filename, "w");
+		
+		        var
+                    webMOptions = {
+                        frameRate: videoOptions.frameRate,
+                        fd: videoFd
+                    };
+        
+                videoWriter = new WebMWriter(webMOptions);
+                
+                resolve();
+            });
+        } else {
+            prepareRender = Promise.resolve();
+        }
+	
+	    prepareRender
+            .then(function() {
+	            renderChunk();
+            })
+            .catch(function(error) {
+                console.error(error);
+                notifyCompletion(false);
+            });
     };
     
     /**
      * Get the number of bytes flushed out to the device so far.
      */
     this.getWrittenSize = function() {
-        return videoWriter ? videoWriter.getWrittenSize() : 0;
+        if (videoOptions.format == "webm") {
+	        return videoWriter ? videoWriter.getWrittenSize() : 0;
+        } else {
+            return writtenBytes;
+        }
     };
 
     canvas.width = videoOptions.width;
@@ -260,8 +305,25 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
         delete logParameters.flightVideo;
     }
     
+    var
+        videoBackground;
+	
+	if (logParameters.flightVideo) {
+		videoBackground = "none";
+	} else {
+	    switch (videoOptions.format) {
+            case "webm":
+            default:
+                // No transparency support in this format
+                videoBackground = "fill";
+	        break;
+            case "png":
+	            videoBackground = "clear";
+        }
+	}
+    
     graph = new FlightLogGrapher(flightLog, logParameters.graphConfig, canvas, craftCanvas, {
-        background: logParameters.flightVideo ? "none" : "fill"
+        background: videoBackground
     });
     
     craftCanvasLeft = parseInt($(craftCanvas).css('left'), 10);
@@ -283,4 +345,23 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
     if (logParameters.flightVideo) {
         logParameters.flightVideo.muted = true;
     }
+    
+    var
+        destinationDir = path.dirname(videoOptions.filename),
+        destinationName = path.basename(videoOptions.filename),
+        destinationExt;
+    
+    if (destinationName.lastIndexOf(".") > -1) {
+        destinationExt = destinationName.substring(destinationName.lastIndexOf("."));
+        destinationName = destinationName.substring(0, destinationName.lastIndexOf("."));
+    } else {
+        destinationExt = "." + videoOptions.format;
+        destinationName = "video";
+    }
+    
+    filenameTemplate = path.join(destinationDir, destinationName + "-$1" + destinationExt);
 }
+
+Object.setPrototypeOf(FlightLogVideoRenderer.prototype, EventEmitter.prototype);
+
+module.exports = FlightLogVideoRenderer;

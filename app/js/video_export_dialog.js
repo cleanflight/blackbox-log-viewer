@@ -1,65 +1,41 @@
 "use strict";
 
-function VideoExportDialog(dialog, onSave) {
-    var
+const
+    EventEmitter = require('events'),
+	{formatTime} = require("./misc.js");
+
+function formatFilesize(bytes) {
+	var
+		megs = Math.round(bytes / (1024 * 1024));
+	
+	return megs + "MB";
+}
+
+function VideoExportDialog(dialog) {
+    const
         DIALOG_MODE_SETTINGS = 0,
         DIALOG_MODE_IN_PROGRESS = 1,
         DIALOG_MODE_COMPLETE = 2,
-      
-        dialogMode,
-        
-        videoRenderer = false,
         
         videoDuration = $(".video-duration", dialog),
         progressBar = $("progress", dialog),
         progressRenderedFrames = $(".video-export-rendered-frames", dialog),
         progressRemaining = $(".video-export-remaining", dialog),
         progressSize = $(".video-export-size", dialog),
-        fileSizeWarning = $(".video-export-size + .alert", dialog),
-
-        renderStartTime,
-        lastEstimatedTimeMsec,
         
         that = this;
-
-    function leftPad(value, pad, width) {
-        // Coorce value to string
-        value = value + "";
-        
-        while (value.length < width) {
-            value = pad + value;
-        }
-        
-        return value;
-    }
     
-    function formatTime(secs) {
-        var
-            mins = Math.floor(secs / 60),
-            secs = secs % 60,
-            
-            hours = Math.floor(mins / 60);
-        
-        mins = mins % 60;
-        
-        if (hours) {
-            return hours + ":" + leftPad(mins, "0", 2) + ":" + leftPad(secs, "0", 2);
-        } else {
-            return mins + ":" + leftPad(secs, "0", 2);
-        }
-    }
-    
-    function formatFilesize(bytes) {
-        var
-            megs = Math.round(bytes / (1024 * 1024));
-        
-        return megs + "MB";
-    }
-    
+    var
+	    dialogMode,
+	
+	    renderStartTime,
+	    lastEstimatedTimeMsec,
+		lastWrittenBytes = 0;
+	
     function setDialogMode(mode) {
         dialogMode = mode;
         
-        var
+        const
             settingClasses = [
                 "video-export-mode-settings", 
                 "video-export-mode-progress", 
@@ -107,6 +83,9 @@ function VideoExportDialog(dialog, onSave) {
         if (videoConfig.width) {
             $(".video-resolution").val(videoConfig.width + "x" + videoConfig.height);
         }
+        if (videoConfig.format) {
+        	$(".video-format").val(videoConfig.format);
+        }
     }
     
     function convertUIToVideoConfig() {
@@ -121,114 +100,99 @@ function VideoExportDialog(dialog, onSave) {
         
         videoConfig.width = parseInt(resolution.split("x")[0], 10);
         videoConfig.height = parseInt(resolution.split("x")[1], 10);
+        
+        videoConfig.format = $(".video-format", dialog).val();
 
         return videoConfig;
     }
+    
+    function onRenderProgress(frameIndex, frameCount, writtenBytes) {
+    	const
+		    PROGRESS_SMOOTHING = 0.0;
+    	
+	    progressBar.prop('max', frameCount - 1);
+	    progressBar.prop('value', frameIndex);
+	
+	    progressRenderedFrames.text((frameIndex + 1) + " / " + frameCount + " (" + ((frameIndex + 1) / frameCount * 100).toFixed(1) + "%)");
+	
+	    if (frameIndex > 0) {
+		    var
+			    elapsedTimeMsec = Date.now() - renderStartTime,
+			    estimatedTimeMsec = elapsedTimeMsec * frameCount / frameIndex;
+		
+		    if (lastEstimatedTimeMsec === false) {
+			    lastEstimatedTimeMsec = estimatedTimeMsec;
+		    } else {
+			    lastEstimatedTimeMsec = lastEstimatedTimeMsec * PROGRESS_SMOOTHING + estimatedTimeMsec * (1.0 - PROGRESS_SMOOTHING);
+		    }
+		
+		    var
+			    estimatedRemaining = Math.max(lastEstimatedTimeMsec - elapsedTimeMsec, 0),
+			    estimatedBytes = Math.round(frameCount / frameIndex * writtenBytes);
+		
+		    progressRemaining.text(formatTime(estimatedRemaining, false));
+		
+		    /*
+		     * Only update the filesize estimate when a block is written (avoids the estimated filesize slowly
+		     * decreasing between blocks)
+		     */
+		    if (writtenBytes != lastWrittenBytes) {
+			    lastWrittenBytes = writtenBytes;
+			
+			    if (writtenBytes > 1000000) { // Wait for the first significant chunk to be written (don't use the tiny header as a size estimate)
+				    progressSize.text(formatFilesize(writtenBytes) + " / " + formatFilesize(estimatedBytes));
+			    }
+		    }
+	    }
+    }
 
-    this.show = function(flightLog, logParameters, videoConfig) {
+    this.show = function(logParameters, videoConfig) {
         setDialogMode(DIALOG_MODE_SETTINGS);
         
-        if (!("inTime" in logParameters) || logParameters.inTime === false) {
-            logParameters.inTime = flightLog.getMinTime();
-        }
-        
-        if (!("outTime" in logParameters) || logParameters.outTime === false) {
-            logParameters.outTime = flightLog.getMaxTime();
-        }
-        
-        videoDuration.text(formatTime(Math.round((logParameters.outTime - logParameters.inTime) / 1000000)));
+        videoDuration.text(formatTime(Math.round((logParameters.outTime - logParameters.inTime) / 1000), false));
         
         $(".jumpy-video-note").toggle(!!logParameters.flightVideo);
         
         dialog.modal('show');
         
-        this.flightLog = flightLog;
         this.logParameters = logParameters;
         
         populateConfig(videoConfig);
     };
+    
+    this.onRenderingBegin = function(videoRenderer) {
+	    renderStartTime = Date.now();
+	    lastEstimatedTimeMsec = false;
+	    
+	    videoRenderer.on("progress", onRenderProgress);
+	    
+	    videoRenderer.once("complete", function(success, frameCount) {
+	    	videoRenderer.removeListener("progress", onRenderProgress);
+		
+		    if (success) {
+			    $(".video-export-result").text("Rendered " + frameCount + " frames in " + formatTime(Date.now() - renderStartTime, false));
+			    setDialogMode(DIALOG_MODE_COMPLETE);
+		    } else {
+			    dialog.modal('hide');
+		    }
+	    });
+    };
  
     $(".video-export-dialog-start").click(function(e) {
-        var
-            lastWrittenBytes = 0,
-            videoConfig = convertUIToVideoConfig();
-        
-        // Send our video config to our host to be saved for next time:
-        onSave(videoConfig);
-        
-        videoRenderer = new FlightLogVideoRenderer(that.flightLog, that.logParameters, videoConfig, {
-            onProgress: function(frameIndex, frameCount) {
-                progressBar.prop('max', frameCount - 1);
-                progressBar.prop('value', frameIndex);
-                
-                progressRenderedFrames.text((frameIndex + 1) + " / " + frameCount + " (" + ((frameIndex + 1) / frameCount * 100).toFixed(1) + "%)");
-                
-                if (frameIndex > 0) {
-                    var
-                        elapsedTimeMsec = Date.now() - renderStartTime,
-                        estimatedTimeMsec = elapsedTimeMsec * frameCount / frameIndex;
-                    
-                    if (lastEstimatedTimeMsec === false) {
-                        lastEstimatedTimeMsec = estimatedTimeMsec; 
-                    } else {
-                        lastEstimatedTimeMsec = lastEstimatedTimeMsec * 0.0 + estimatedTimeMsec * 1.0;
-                    }
-                    
-                    var
-                        estimatedRemaining = Math.max(Math.round((lastEstimatedTimeMsec - elapsedTimeMsec) / 1000), 0);
-                    
-                    progressRemaining.text(formatTime(estimatedRemaining));
-                    
-                    var
-                        writtenBytes = videoRenderer.getWrittenSize(),
-                        estimatedBytes = Math.round(frameCount / frameIndex * writtenBytes);
-                    
-                    /* 
-                     * Only update the filesize estimate when a block is written (avoids the estimated filesize slowly 
-                     * decreasing between blocks)
-                     */
-                    if (writtenBytes != lastWrittenBytes) {
-                        lastWrittenBytes = writtenBytes;
-                        
-                        if (writtenBytes > 1000000) { // Wait for the first significant chunk to be written (don't use the tiny header as a size estimate)
-                            progressSize.text(formatFilesize(writtenBytes) + " / " + formatFilesize(estimatedBytes));
-                        }
-                    }
-                }
-            },
-            onComplete: function(success, frameCount) {
-                if (success) {
-                    $(".video-export-result").text("Rendered " + frameCount + " frames in " + formatTime(Math.round((Date.now() - renderStartTime) / 1000)));
-                    setDialogMode(DIALOG_MODE_COMPLETE);
-                } else {
-                    dialog.modal('hide');
-                }
-                // Free up any memory still held by the video renderer
-                if (videoRenderer) {
-                    videoRenderer = false;
-                }
-            }
-        });
-        
-        progressBar.prop('value', 0);
-        progressRenderedFrames.text('');
-        progressRemaining.text('');
-        progressSize.text('Calculating...');
-        fileSizeWarning.hide();
-        
-        setDialogMode(DIALOG_MODE_IN_PROGRESS);
-        
-        renderStartTime = Date.now();
-        lastEstimatedTimeMsec = false;
-        videoRenderer.start();
-        
-        e.preventDefault();
+	    e.preventDefault();
+	    
+	    that.emit("optionsChosen", that.logParameters, convertUIToVideoConfig());
+	
+	    progressBar.prop('value', 0);
+	    progressRenderedFrames.text('');
+	    progressRemaining.text('');
+	    progressSize.text('Calculating...');
+	
+	    setDialogMode(DIALOG_MODE_IN_PROGRESS);
     });
-    
+
     $(".video-export-dialog-cancel").click(function(e) {
-        if (videoRenderer) {
-            videoRenderer.cancel();
-        }
+    	that.emit("cancel");
     });
     
     dialog.modal({
@@ -236,3 +200,7 @@ function VideoExportDialog(dialog, onSave) {
         backdrop: "static" // Don't allow a click on the backdrop to close the dialog
     });
 }
+
+Object.setPrototypeOf(VideoExportDialog.prototype, EventEmitter.prototype);
+
+module.exports = VideoExportDialog;

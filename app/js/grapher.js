@@ -1,5 +1,8 @@
 "use strict";
 
+const
+    {leftPad, formatTime} = require("./misc.js");
+
 function FlightLogGrapher(flightLog, graphConfig, canvas, craftCanvas, options) {
     var
         PID_P = 0,
@@ -928,3 +931,5 @@ function FlightLogGrapher(flightLog, graphConfig, canvas, craftCanvas, options) 
     
     this.resize(canvas.width, canvas.height);
 }
+
+module.exports = FlightLogGrapher;

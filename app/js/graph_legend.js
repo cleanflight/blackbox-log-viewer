@@ -1,5 +1,8 @@
 "use strict";
 
+const
+	FlightLogFieldPresenter = require("./flightlog_fields_presenter.js");
+
 function GraphLegend(targetElem, config, onVisibilityChange) {
     var
         that = this;
@@ -65,3 +68,5 @@ function GraphLegend(targetElem, config, onVisibilityChange) {
     
     buildLegend();
 }
+
+module.exports = GraphLegend;

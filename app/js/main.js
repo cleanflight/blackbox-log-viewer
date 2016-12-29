@@ -1,7 +1,35 @@
 "use strict";
 
 const
-    {app} = require('electron').remote;
+    {app, dialog} = require('electron').remote,
+	
+	fs = require('fs'),
+
+    {formatTime} = require("./misc.js"),
+	FlightLogVideoRenderer = require("./flightlog_video_renderer.js"),
+    FlightLogFieldPresenter = require("./flightlog_fields_presenter.js"),
+    VideoExportDialog = require("./video_export_dialog.js"),
+	GraphConfigurationDialog = require("./graph_config_dialog.js"),
+    FlightLogGrapher = require("./grapher.js"),
+    GraphLegend = require("./graph_legend");
+
+function pickOutputFile(suggestedName, filter) {
+	return new Promise(function (resolve, reject) {
+		dialog.showSaveDialog({
+			title: "Write video to file...",
+			defaultPath: suggestedName,
+			filters: [
+				filter
+			]
+		}, function (filename) {
+			if (filename) {
+				resolve(filename);
+			} else {
+				reject(null);
+			}
+		});
+	});
+}
 
 function BlackboxLogViewer() {
     const
@@ -62,7 +90,9 @@ function BlackboxLogViewer() {
         
         playbackRate = PLAYBACK_DEFAULT_RATE,
         
-        graphZoom = GRAPH_DEFAULT_ZOOM;
+        graphZoom = GRAPH_DEFAULT_ZOOM,
+	
+	    videoExportDialog;
     
     function blackboxTimeFromVideoTime() {
         return (video.currentTime - videoOffset) * 1000000 + flightLog.getMinTime();
@@ -518,6 +548,69 @@ function BlackboxLogViewer() {
         updateCanvasSize();
     }
     
+    function showVideoExportDialog() {
+        setGraphState(GRAPH_STATE_PAUSED);
+    
+        var
+            logParameters = {
+                graphConfig: activeGraphConfig,
+                inTime: videoExportInTime,
+                outTime: videoExportOutTime,
+                flightVideo: hasVideo ? video.cloneNode() : false,
+                flightVideoOffset: videoOffset
+            };
+    
+        if (!("inTime" in logParameters) || logParameters.inTime === false) {
+            logParameters.inTime = flightLog.getMinTime();
+        }
+    
+        if (!("outTime" in logParameters) || logParameters.outTime === false) {
+            logParameters.outTime = flightLog.getMaxTime();
+        }
+    
+        videoExportDialog.show(logParameters, videoConfig);
+    }
+    
+    function onVideoExportOptionsChosen(logParameters, _videoConfig) {
+        var
+            pickFilename;
+	
+        // Remember these settings for next dialog open...
+	    videoConfig = _videoConfig;
+	
+	    // And next application launch...
+	    prefs.set('videoConfig', videoConfig);
+        
+        if (videoConfig.format == "webm") {
+	        pickFilename = pickOutputFile("video.webm", {
+		        name: "WebM video",
+		        extensions: ["webm"]
+	        });
+        } else {
+	        pickFilename = pickOutputFile("video.png", {
+		        name: "PNG frames",
+		        extensions: ["png"]
+	        });
+        }
+	
+	    pickFilename
+            .then(function(filename) {
+                videoConfig.filename = filename;
+            })
+            .then(function() {
+                var
+                    videoRenderer = new FlightLogVideoRenderer(flightLog, logParameters, videoConfig);
+            
+                videoRenderer.start();
+            
+                videoExportDialog.onRenderingBegin(videoRenderer);
+                
+                videoExportDialog.once("cancel", function() {
+                    videoRenderer.cancel();
+                });
+            });
+    }
+    
     prefs.get('videoConfig', function(item) {
         if (item) {
             videoConfig = item;
@@ -551,8 +644,12 @@ function BlackboxLogViewer() {
                 graphLegend.hide();
             }
         });
-        
-        $(".file-open").change(function(e) {
+	
+	    videoExportDialog = new VideoExportDialog($("#dlgVideoExport"));
+	
+	    videoExportDialog.on("optionsChosen", onVideoExportOptionsChosen);
+	
+	    $(".file-open").change(function(e) {
             var 
                 files = e.target.files,
                 i;
@@ -560,7 +657,7 @@ function BlackboxLogViewer() {
             for (i = 0; i < files.length; i++) {
                 var
                     isLog = files[i].name.match(/\.(TXT|CFL|LOG)$/i),
-                    isVideo = files[i].name.match(/\.(AVI|MOV|MP4|MPEG)$/i);
+                    isVideo = files[i].name.match(/\.(AVI|MOV|MP4|MPEG|WEBM)$/i);
                 
                 if (!isLog && !isVideo) {
                     if (files[i].size < 10 * 1024 * 1024)
@@ -655,14 +752,7 @@ function BlackboxLogViewer() {
                 activeGraphConfig.adaptGraphs(flightLog, graphConfig);
                 
                 prefs.set('graphConfig', graphConfig);
-            }),
-            
-            exportDialog = new VideoExportDialog($("#dlgVideoExport"), function(newConfig) {
-                videoConfig = newConfig;
-                
-                prefs.set('videoConfig', newConfig);
             });
-
         
         $(".open-graph-configuration-dialog").click(function(e) {
             e.preventDefault();
@@ -671,19 +761,10 @@ function BlackboxLogViewer() {
         });
 
         $(".btn-video-export").click(function(e) {
-            setGraphState(GRAPH_STATE_PAUSED);
-
-            exportDialog.show(flightLog, {
-                graphConfig: activeGraphConfig,
-                inTime: videoExportInTime,
-                outTime: videoExportOutTime,
-                flightVideo: hasVideo ? video.cloneNode() : false,
-                flightVideoOffset: videoOffset
-            }, videoConfig);
-            
+            showVideoExportDialog();
             e.preventDefault();
         });
-
+        
         $(window).resize(updateCanvasSize);
         
         $(document).keydown(function(e) {
@@ -770,9 +851,9 @@ function BlackboxLogViewer() {
         
         $(".app-version").text("v" + app.getVersion());
     });
+
+    // Boostrap's data API is extremely slow when there are a lot of DOM elements churning, don't use it
+	$(document).off('.data-api');
 }
 
-// Boostrap's data API is extremely slow when there are a lot of DOM elements churning, don't use it
-$(document).off('.data-api');
-
-window.blackboxLogViewer = new BlackboxLogViewer();
+module.exports = BlackboxLogViewer;

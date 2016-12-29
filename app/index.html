@@ -347,7 +347,10 @@
                         <div class="form-group">
                             <label class="col-sm-3 control-label">Video format</label>
                             <div class="col-sm-9">
-                                <p class="form-control-static video-format">WebM</p>
+                                <select class="form-control video-format">
+                                    <option value="webm">WebM</option>
+                                    <option value="png">PNG frames</option>
+                                </select>
                             </div>
                         </div>
                         <div class="form-group">
@@ -417,18 +420,17 @@
     <script src="js/craft_2d.js"></script>
     <script src="js/craft_3d.js"></script>
     <script src="js/flightlog_fielddefs.js"></script>
-    <script src="js/flightlog_fields_presenter.js"></script>
     <script src="js/flightlog_parser.js"></script>
     <script src="js/flightlog_index.js"></script>
     <script src="js/flightlog.js"></script>
-    <script src="js/grapher.js"></script>
-    <script src="js/graph_config.js"></script>
-    <script src="js/graph_legend.js"></script>
-    <script src="js/graph_config_dialog.js"></script>
     <script src="js/seekbar.js"></script>
-    <script src="js/video_export_dialog.js"></script>
-    <script src="js/flightlog_video_renderer.js"></script>
     <script src="js/graph_config.js"></script>
-    <script src="js/main.js"></script>
+
+    <script>
+        const
+            BlackboxLogViewer = require("./js/main.js");
+
+        new BlackboxLogViewer();
+    </script>
 </body>
 </html>

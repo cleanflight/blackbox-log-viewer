@@ -1,5 +1,8 @@
 "use strict";
 
+const
+	FlightLogFieldPresenter = require("./flightlog_fields_presenter.js");
+
 function GraphConfigurationDialog(dialog, onSave) {
     var
         // Some fields it doesn't make sense to graph
@@ -298,6 +301,6 @@ function GraphConfigurationDialog(dialog, onSave) {
         $('.config-graph').remove();
         updateRemoveAllButton();
     });
-    
-    
 }
+
+module.exports = GraphConfigurationDialog;
