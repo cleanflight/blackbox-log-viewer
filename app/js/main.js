@@ -5,7 +5,7 @@ const
 	
 	fs = require('fs'),
 
-    {formatTime} = require("./misc.js"),
+    {formatTime, setFileExtension} = require("./misc.js"),
 	FlightLogVideoRenderer = require("./flightlog_video_renderer.js"),
     FlightLogFieldPresenter = require("./flightlog_fields_presenter.js"),
     VideoExportDialog = require("./video_export_dialog.js"),
@@ -66,6 +66,8 @@ function BlackboxLogViewer() {
         
         graphLegend = null,
         fieldPresenter = FlightLogFieldPresenter,
+        
+        logFilename = null,
         
         hasVideo = false, hasLog = false,
         video = $(".log-graph video")[0],
@@ -501,6 +503,7 @@ function BlackboxLogViewer() {
                 return;
             }
             
+            logFilename = file.path;
             renderLogFileInfo(file);
             
             hasLog = true;
@@ -582,30 +585,35 @@ function BlackboxLogViewer() {
 	    prefs.set('videoConfig', videoConfig);
         
         if (videoConfig.format == "webm") {
-	        pickFilename = pickOutputFile("video.webm", {
+	        pickFilename = pickOutputFile(setFileExtension(logFilename, ".webm"), {
 		        name: "WebM video",
 		        extensions: ["webm"]
 	        });
         } else {
-	        pickFilename = pickOutputFile("video.png", {
+	        pickFilename = pickOutputFile(setFileExtension(logFilename, ".png"), {
 		        name: "PNG frames",
 		        extensions: ["png"]
 	        });
         }
 	
 	    pickFilename
+            .catch(function() {
+                videoExportDialog.close();
+                
+                return Promise.reject();
+            })
             .then(function(filename) {
                 videoConfig.filename = filename;
             })
             .then(function() {
                 var
                     videoRenderer = new FlightLogVideoRenderer(flightLog, logParameters, videoConfig);
-            
-                videoRenderer.start();
-            
-                videoExportDialog.onRenderingBegin(videoRenderer);
+	
+	            videoRenderer.start();
+	
+	            videoExportDialog.onRenderingBegin(videoRenderer);
                 
-                videoExportDialog.once("cancel", function() {
+	            videoExportDialog.once("cancel", function() {
                     videoRenderer.cancel();
                 });
             });

@@ -1,3 +1,6 @@
+const
+	path = require("path");
+
 function leftPad(string, pad, minLength) {
 	// Coerce value to string:
 	string = "" + string;
@@ -28,4 +31,28 @@ function formatTime(msec, displayMsec) {
 		+ (displayMsec ? "." + leftPad(msec, "0", 3) : "");
 }
 
-module.exports = {leftPad, formatTime};
+/**
+ * Change the extension of the given filename.
+ *
+ * @param {String} filename - A valid path and filename
+ * @param {String} extension - Should include the dot, e.g. ".jpg"
+ * @returns {string}
+ */
+function setFileExtension(filename, extension) {
+	var
+		directory = path.dirname(filename),
+		name = path.basename(filename);
+	
+	if (name.length == 0) {
+		throw new Error("Empty filename not allowed");
+	}
+	
+	// Remove existing file extension if present
+	if (name.lastIndexOf(".") > -1) {
+		name = name.substring(0, name.lastIndexOf("."));
+	}
+	
+	return path.join(directory, name + extension);
+}
+
+module.exports = {leftPad, formatTime, setFileExtension};

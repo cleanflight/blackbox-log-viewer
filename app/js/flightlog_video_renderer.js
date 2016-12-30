@@ -276,14 +276,22 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions) {
             prepareRender = Promise.resolve();
         }
 	
-	    prepareRender
-            .then(function() {
-	            renderChunk();
-            })
-            .catch(function(error) {
-                console.error(error);
-                notifyCompletion(false);
-            });
+        /* Ensure caller can have a chance to update the DOM before we start trying to render (so they can throw up
+         * a "video rendering..." message)
+         */
+        setTimeout(
+            function() {
+                prepareRender
+		            .then(function() {
+			            renderChunk();
+		            })
+		            .catch(function(error) {
+			            console.error(error);
+			            notifyCompletion(false);
+		            })
+            },
+            0
+        );
     };
     
     /**

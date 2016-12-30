@@ -160,7 +160,18 @@ function VideoExportDialog(dialog) {
         populateConfig(videoConfig);
     };
     
+    this.close = function() {
+		dialog.modal("hide");
+    };
+    
     this.onRenderingBegin = function(videoRenderer) {
+	    progressBar.prop('value', 0);
+	    progressRenderedFrames.text('');
+	    progressRemaining.text('');
+	    progressSize.text('Calculating...');
+	
+	    setDialogMode(DIALOG_MODE_IN_PROGRESS);
+	    
 	    renderStartTime = Date.now();
 	    lastEstimatedTimeMsec = false;
 	    
@@ -173,7 +184,7 @@ function VideoExportDialog(dialog) {
 			    $(".video-export-result").text("Rendered " + frameCount + " frames in " + formatTime(Date.now() - renderStartTime, false));
 			    setDialogMode(DIALOG_MODE_COMPLETE);
 		    } else {
-			    dialog.modal('hide');
+			    that.close();
 		    }
 	    });
     };
@@ -182,13 +193,6 @@ function VideoExportDialog(dialog) {
 	    e.preventDefault();
 	    
 	    that.emit("optionsChosen", that.logParameters, convertUIToVideoConfig());
-	
-	    progressBar.prop('value', 0);
-	    progressRenderedFrames.text('');
-	    progressRemaining.text('');
-	    progressSize.text('Calculating...');
-	
-	    setDialogMode(DIALOG_MODE_IN_PROGRESS);
     });
 
     $(".video-export-dialog-cancel").click(function(e) {
