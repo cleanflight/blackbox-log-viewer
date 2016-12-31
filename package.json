@@ -3,15 +3,22 @@
     "appId": "com.cleanflight.blackbox-log-viewer",
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "linux": {
       "category": "Science",
       "packageCategory": "science",
-      "target": ["deb"]
+      "target": [
+        "deb"
+      ]
     },
     "win": {
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     },
     "publish": {
       "provider": "github"
@@ -25,14 +32,11 @@
     "start": "electron ./app",
     "debug": "electron ./app --inspector",
     "pack": "build --dir",
-
     "dist-comment": "echo For cross-building instructions, see https://github.com/electron-userland/electron-builder/wiki/Multi-Platform-Build",
     "dist-mac": "build --mac --x64",
     "dist-win": "build --win --ia32 --x64",
     "dist-lin": "build --linux",
-
     "publish": "build --mac --win --linux --ia32 --x64 --publish always",
-
     "postinstall": "install-app-deps"
   },
   "directories": {

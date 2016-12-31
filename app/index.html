@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap-theme.css">
 <link rel="stylesheet" href="css/jquery.nouislider.min.css">
 <link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/preset_picker.css">
 
 <script>
     window.$ = window.jQuery = require('jquery');
@@ -271,6 +272,8 @@
                     <h4 class="modal-title">Configure graphs</h4>
                 </div>
                 <div class="modal-body">
+                    <div class="graph-presets-picker"></div>
+                    <hr>
                     <div class="btn-group">
                         <button type="button" class="btn btn-primary dropdown-toggle config-graphs-add" data-toggle="dropdown" aria-expanded="false">
                             Add graph <span class="caret"></span>
@@ -407,6 +410,37 @@
         </div>
     </div>
 
+    <div class="modal fade" id="dlgSettings">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Layout settings</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form form-horizontal">
+                        <div class="form-group">
+                            <div class="col-sm-3 control-label">Layout preset</div>
+                            <div class="col-sm-9">
+                                <select class="layout-presets">
+                                </select>
+                            </div>
+                        </div>
+                        <table class="table">
+                            <tr>
+                                <th>Section</th>
+                                <th>Settings</th>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default settings-dialog-cancel" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary settings-dialog-start" data-dismiss="modal">Ok</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="js/vendor/jquery.ba-throttle-debounce.js"></script>
     <script src="js/vendor/three.min.js"></script>
     <script src="js/vendor/jquery.nouislider.all.min.js"></script>
@@ -424,7 +458,6 @@
     <script src="js/flightlog_index.js"></script>
     <script src="js/flightlog.js"></script>
     <script src="js/seekbar.js"></script>
-    <script src="js/graph_config.js"></script>
 
     <script>
         const

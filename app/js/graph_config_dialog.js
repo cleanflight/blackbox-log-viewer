@@ -1,16 +1,47 @@
 "use strict";
 
 const
-	FlightLogFieldPresenter = require("./flightlog_fields_presenter.js");
+    cloneDeep = require('clone-deep'),
+    
+	FlightLogFieldPresenter = require("./flightlog_fields_presenter.js"),
+    GraphConfig = require("./graph_config.js"),
+    {Presets} = require("./presets.js"),
+    PresetPicker = require("./preset_picker.js");
 
-function GraphConfigurationDialog(dialog, onSave) {
+/**
+ *
+ * @param {HTMLElement} dialog - Root dialog element to attach to
+ * @param {Presets} graphPresets
+ * @constructor
+ */
+function GraphConfigurationDialog(dialog, graphPresets) {
     var
         // Some fields it doesn't make sense to graph
         BLACKLISTED_FIELDS = {time:true, loopIteration:true},
         offeredFieldNames = [],
-        exampleGraphs = [];
+        exampleGraphs = [],
+	
+	    graphPresetsBackup,
+	
+	    presetPicker = new PresetPicker($(".graph-presets-picker", dialog), graphPresets),
+	
+	    removeAllGraphsButton = $(".config-graphs-remove-all-graphs", dialog);
+	
+	/**
+     * Make a change to the current preset. Your action will be called with the preset for you to modify.
+	 * @param action
+	 */
+	function updateActivePreset(action) {
+	    let
+		    newPreset = cloneDeep(graphPresets.getActivePreset());
+	
+	    action(newPreset);
+	
+	    graphPresets.updateSettings(graphPresets.active.name, newPreset, false);
+	
+    }
     
-    function renderFieldOption(fieldName, selectedName) {
+	function renderFieldOption(fieldName, selectedName) {
         var 
             option = $("<option></option>")
                 .text(FlightLogFieldPresenter.fieldNameToFriendly(fieldName))
@@ -28,7 +59,7 @@ function GraphConfigurationDialog(dialog, onSave) {
      * initial selection.
      */
     function renderField(field) {
-        var 
+        let
             elem = $(
                 '<li class="config-graph-field">'
                     + '<select class="form-control"><option value="">(choose a field)</option></select>'
@@ -36,120 +67,104 @@ function GraphConfigurationDialog(dialog, onSave) {
                 + '</li>'
             ),
             select = $('select', elem),
-            selectedFieldName = field ? field.name : false,
-            i;
+            selectedFieldName = field ? field.name : false;
         
-        for (i = 0; i < offeredFieldNames.length; i++) {
-            select.append(renderFieldOption(offeredFieldNames[i], selectedFieldName));
+        for (let fieldName of offeredFieldNames) {
+            select.append(renderFieldOption(fieldName, selectedFieldName));
         }
         
         return elem;
     }
     
-    function renderGraph(index, graph) {
-        var 
-            graphElem = $(
-                '<li class="config-graph">'
-                    + '<dl>'
-                        + '<dt><span>' 
-                            + '<h4 style="display:inline-block;vertical-align: baseline;">Graph ' + '<span class="graph-index-number">' + (index + 1) + '</span>' + '</h4>' 
-                            + '<button type="button" class="btn btn-default btn-sm pull-right remove-single-graph-button" style="display:inline-block;vertical-align: baseline;">Remove graph ' + '</button>'    
-                        + '</span></dt>'                     
-                        + '<dd>'
-                            + '<div class="form-horizontal">'
-                                + '<div class="form-group">'
-                                    + '<label class="col-sm-2 control-label">Axis label</label>'
-                                    + '<div class="col-sm-10">'
-                                        + '<input class="form-control" type="text" placeholder="Axis label">'
-                                    + '</div>'
-                                + '</div>'
-                                + '<div class="form-group form-group-sm">'
-                                    + '<label class="col-sm-2 control-label">Fields</label>'
-                                    + '<div class="col-sm-10">'
-                                        + '<ul class="config-graph-field-list form-inline list-unstyled"></ul>'
-                                        + '<button type="button" class="btn btn-default btn-sm add-field-button"><span class="glyphicon glyphicon-plus"></span> Add field</button>'
-                                    + '</div>'
-                                + '</div>'
-                            + '</div>'
-                        + '</dd>'
-                    + '</dl>'
-                + '</li>'
-            ),
-            fieldList = $(".config-graph-field-list", graphElem);
+    function renderGraph(graphIndex, graph) {
+        let
+            graphElem = $(`
+                <li class="config-graph">
+                    <dl>
+                        <dt><span>
+                            <h4>Graph <span class="graph-index-number">${graphIndex + 1}</span></h4>
+                            <button type="button" class="btn btn-default btn-sm pull-right remove-single-graph-button">Remove graph</button>
+                        </span></dt>                 
+                        <dd>
+                            <div class="form-horizontal">
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Axis label</label>
+                                    <div class="col-sm-10">
+                                        <input class="form-control" type="text" placeholder="Axis label">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">Fields</label>
+                                    <div class="col-sm-10">
+                                        <ul class="config-graph-field-list form-group-sm form-inline list-unstyled"></ul>
+                                        <button type="button" class="btn btn-default btn-sm add-field-button"><span class="glyphicon glyphicon-plus"></span> Add field</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </dd>
+                    </dl>
+                </li>
+	        `),
+            fieldList = $(".config-graph-field-list", graphElem),
+            graphNameField = $("input", graphElem);
         
-        $("input", graphElem).val(graph.label);
+        graphNameField
+	        .val(graph.label)
+	        .change(function(e) {
+		        updateActivePreset(preset => preset.graphs[graphIndex].label = $(this).val());
+	        });
         
-        // "Add field" button
         $(".add-field-button", graphElem).click(function(e) {
-            fieldList.append(renderField({}));
-            e.preventDefault();
+	        updateActivePreset(preset => preset.graphs[graphIndex].fields.push({name: ""}));
+            
+	        e.preventDefault();
         });
         
-        // "Remove Graph" button
         $(".remove-single-graph-button", graphElem).click(function(e) {
-            var parentGraph = $(this).parents('.config-graph');
-            parentGraph.remove();
-            updateRemoveAllButton();
+	        updateActivePreset(preset => preset.graphs.splice(graphIndex, 1));
+            
             e.preventDefault();
         });
                 
-        for (var i = 0; i < graph.fields.length; i++) {
-            var 
-                field = graph.fields[i],
-                fieldElem = renderField(field);
-            
-            fieldList.append(fieldElem);
-        }
+        fieldList
+	        .append(graph.fields.map(renderField))
         
-        fieldList.on('click', 'button', function(e) {
-            var
-                parentGraph = $(this).parents('.config-graph');
-            
-            $(this).parents('.config-graph-field').remove();
-                        
-            e.preventDefault();
-        });
+            // Catch field dropdown changes
+            .on("change", "select", function(e) {
+		        let
+			        fieldIndex = $(this).parents('.config-graph-field').index();
+		
+		        updateActivePreset(preset => preset.graphs[graphIndex].fields[fieldIndex].name = $(e.target).val());
+	        })
+        
+            // Remove field button
+            .on('click', 'button', function(e) {
+	            let
+	                fieldIndex = $(this).parents('.config-graph-field').index();
+		
+	            updateActivePreset(preset => preset.graphs[graphIndex].fields.splice(fieldIndex, 1));
+		
+		        e.preventDefault();
+	        });
 
         return graphElem;
     }
     
-    function renderGraphs(graphs) {
-        var
+    function renderGraphs() {
+        let
+            graphs = graphPresets.getActivePreset().graphs,
             graphList = $(".config-graphs-list", dialog);
         
         graphList.empty();
         
-        for (var i = 0; i < graphs.length; i++) {
+        for (let i = 0; i < graphs.length; i++) {
             graphList.append(renderGraph(i, graphs[i]));
         }
-        updateRemoveAllButton();                
+	
+	    removeAllGraphsButton.toggle(graphPresets.getActivePreset().graphs.length > 0);
     }
-
-    // Show/Hide remove all button
-    function updateRemoveAllButton() {
-        var graphCount = $('.config-graph').length;
-        if (graphCount > 0) {
-            $('.config-graphs-remove-all-graphs').show();
-        } else {
-            $('.config-graphs-remove-all-graphs').hide();
-        }
-        renumberGraphIndexes();
-    }
-    
-    // Renumber the "Graph X" blocks after additions/deletions
-    function renumberGraphIndexes() {
-        var graphIndexes = $('.graph-index-number');
-        var graphCount = graphIndexes.length;
-        for (var i = 0; i < graphCount; i++) {
-            var currentGraphNumber = i+1;
-            $(graphIndexes[i]).html(currentGraphNumber);
-        }
-    }    
     
     function populateExampleGraphs(flightLog, menu) {
-        var
-            i;
-        
         menu.empty();
         
         exampleGraphs = GraphConfig.getExampleGraphConfigs(flightLog);
@@ -160,8 +175,8 @@ function GraphConfigurationDialog(dialog, onSave) {
             dividerAfter: true
         });
         
-        for (i = 0; i < exampleGraphs.length; i++) {
-            var 
+        for (let i = 0; i < exampleGraphs.length; i++) {
+            let
                 graph = exampleGraphs[i],
                 li = $('<li><a href="#"></a></li>');
             
@@ -176,52 +191,20 @@ function GraphConfigurationDialog(dialog, onSave) {
             }
         }
     }
-    
-    function convertUIToGraphConfig() {
-        var 
-            graphs = [],
-            graph,
-            field;
-        
-        $(".config-graph", dialog).each(function() {
-            graph = {
-               fields: [],
-               height: 1
-            };
-            
-            graph.label = $("input[type='text']", this).val();
-            
-            $(".config-graph-field", this).each(function() {
-                field = {
-                    name: $("select", this).val()
-                };
-                
-                if (field.name.length > 0) {
-                    graph.fields.push(field);
-                }
-            });
-            
-            graphs.push(graph);
-        });
-        
-        return graphs;
-    }
 
     // Decide which fields we should offer to the user
-    function buildOfferedFieldNamesList(flightLog, config) {
-        var
-            i, j,
+    function buildOfferedFieldNamesList(flightLog) {
+        let
             lastRoot = null,
             fieldNames = flightLog.getMainFieldNames(),
             fieldsSeen = {};
         
         offeredFieldNames = [];
         
-        for (i = 0; i < fieldNames.length; i++) {
+        for (let fieldName of fieldNames) {
             // For fields with multiple bracketed x[0], x[1] versions, add an "[all]" option
-            var 
-                fieldName = fieldNames[i],
-                matches = fieldName.match(/^(.+)\[[0-9]+\]$/);
+            let
+                matches = fieldName.match(/^(.+)\[[0-9]+]$/);
             
             if (BLACKLISTED_FIELDS[fieldName])
                 continue;
@@ -246,61 +229,63 @@ function GraphConfigurationDialog(dialog, onSave) {
          * the GUI anyway. (This way we can build a config when using a tricopter (which includes a tail servo) and
          * keep that tail servo in the config when we're viewing a quadcopter).
          */
-        for (i = 0; i < config.length; i++) {
-            var 
-                graph = config[i];
+        for (let preset of graphPresets) {
+            let
+                config = preset.content;
             
-            for (j = 0; j < graph.fields.length; j++) {
-                var 
-                    field = graph.fields[j];
-                
-                if (!fieldsSeen[field.name]) {
-                    offeredFieldNames.push(field.name);
-                }
-            }
+	        for (let graph of config.graphs) {
+		        for (let field of graph.fields) {
+			        if (field.name && field.name.length > 0 && !fieldsSeen[field.name]) {
+				        offeredFieldNames.push(field.name);
+				        fieldsSeen[field.name] = true;
+			        }
+		        }
+	        }
         }
     }
     
-    this.show = function(flightLog, config) {
-        dialog.modal('show');
+    this.show = function(flightLog) {
+        // We'll restore this backup if the user cancels the dialog
+        graphPresetsBackup = graphPresets.clone();
         
-        buildOfferedFieldNamesList(flightLog, config);
-
-        populateExampleGraphs(flightLog, exampleGraphsMenu);
-        renderGraphs(config);
+	    populateExampleGraphs(flightLog, exampleGraphsMenu);
+	    buildOfferedFieldNamesList(flightLog, graphPresets.getActivePreset().graphs);
+        
+	    renderGraphs();
+	
+	    dialog.modal('show');
     };
  
-    $(".graph-configuration-dialog-save").click(function(e) {
-        onSave(convertUIToGraphConfig());
+    $(".graph-configuration-dialog-cancel", dialog).click(function(e) {
+	    graphPresets.copyFrom(graphPresetsBackup);
     });
     
-    $(".config-graphs-add").dropdown();
-    
-    var
-        exampleGraphsButton = $(".config-graphs-add"),
-        exampleGraphsMenu = $(".config-graphs-add ~ .dropdown-menu");
-    
+    let
+        exampleGraphsButton = $(".config-graphs-add", dialog),
+        exampleGraphsMenu = $(".config-graphs-add ~ .dropdown-menu", dialog);
+	
+	exampleGraphsButton.dropdown();
+	
+	// Add an example graph
     exampleGraphsMenu.on("click", "a", function(e) {
-        var 
-            graph = exampleGraphs[$(this).data("graphIndex")],
-            graphElem = renderGraph($(".config-graph", dialog).length, graph);
-        
-        $(".config-graphs-list", dialog).append(graphElem);
-        updateRemoveAllButton();
-        
+        let
+            graph = exampleGraphs[$(this).data("graphIndex")];
+	
+        updateActivePreset(preset => preset.graphs.push(graph));
+	
         // Dismiss the dropdown button
         exampleGraphsButton.dropdown("toggle");
         
         e.preventDefault();
     });
     
-    // Remove all Graphs button
-    var removeAllGraphsButton = $(".config-graphs-remove-all-graphs");
-    
     removeAllGraphsButton.on("click", function() {
-        $('.config-graph').remove();
-        updateRemoveAllButton();
+	    updateActivePreset(preset => preset.graphs = []);
+	    
+	    e.preventDefault();
     });
+	
+	graphPresets.on("activePresetChange", renderGraphs);
 }
 
 module.exports = GraphConfigurationDialog;

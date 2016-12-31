@@ -1,0 +1,21 @@
+.preset-picker .form-inline {
+    display: flex;
+}
+.preset-picker .form-inline .form-group:first-child {
+    display: flex;
+    flex-grow:1;
+    align-items:center;
+}
+.preset-picker {
+    margin-bottom:1em;
+}
+.preset-picker select,
+.preset-picker .preset-picker-preset-name {
+    flex-grow:1;
+    margin-left:0.5em;
+    margin-right:0.5em;
+}
+.preset-picker .preset-picker-preset-name,
+.preset-picker .preset-picker-name-buttons {
+    display:none;
+}

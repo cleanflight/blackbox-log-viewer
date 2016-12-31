@@ -64,7 +64,7 @@ function GraphLegend(targetElem, config, onVisibilityChange) {
         }
     };
     
-    config.addListener(buildLegend);
+    config.on("change", buildLegend);
     
     buildLegend();
 }

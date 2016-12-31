@@ -1,7 +1,8 @@
 "use strict";
 
 const
-    {leftPad, formatTime} = require("./misc.js");
+    {leftPad, formatTime} = require("./misc.js"),
+    GraphConfig = require("./graph_config.js");
 
 function FlightLogGrapher(flightLog, graphConfig, canvas, craftCanvas, options) {
     var
@@ -926,7 +927,7 @@ function FlightLogGrapher(flightLog, graphConfig, canvas, craftCanvas, options) 
     //Handle dragging events
     $(canvas).on("mousedown", onMouseDown);
     
-    graphConfig.addListener(refreshGraphConfig);
+    graphConfig.on("change", refreshGraphConfig);
     refreshGraphConfig();
     
     this.resize(canvas.width, canvas.height);

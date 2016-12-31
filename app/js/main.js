@@ -9,9 +9,13 @@ const
 	FlightLogVideoRenderer = require("./flightlog_video_renderer.js"),
     FlightLogFieldPresenter = require("./flightlog_fields_presenter.js"),
     VideoExportDialog = require("./video_export_dialog.js"),
+    GraphConfig = require("./graph_config.js"),
+	LayoutConfig = require("./layout_config.js"),
 	GraphConfigurationDialog = require("./graph_config_dialog.js"),
     FlightLogGrapher = require("./grapher.js"),
-    GraphLegend = require("./graph_legend");
+    GraphLegend = require("./graph_legend.js"),
+    
+    {Presets, Preset} = require("./presets.js");
 
 function pickOutputFile(suggestedName, filter) {
 	return new Promise(function (resolve, reject) {
@@ -57,12 +61,16 @@ function BlackboxLogViewer() {
         
         // User's video render config:
         videoConfig = {},
-        
-        // JSON graph configuration:
-        graphConfig = {},
-        
-        // Graph configuration which is currently in use, customised based on the current flight log from graphConfig
-        activeGraphConfig = new GraphConfig(),
+	
+	    graphPresets = new Presets(),
+	    layoutPresets = new Presets(),
+	
+	    /**
+         * Graph configuration which is currently in use, customised based on the current flight log from graphConfig
+         *
+         * @type {GraphConfig}
+	     */
+	    activeGraphConfig = new GraphConfig(),
         
         graphLegend = null,
         fieldPresenter = FlightLogFieldPresenter,
@@ -459,7 +467,7 @@ function BlackboxLogViewer() {
         setVideoInTime(false);
         setVideoOutTime(false);
     
-        activeGraphConfig.adaptGraphs(flightLog, graphConfig);
+        activeGraphConfig.adaptGraphs(flightLog, graphPresets.getActivePreset().graphs);
         
         graph.onSeek = function(offset) {
             //Seek faster
@@ -619,32 +627,75 @@ function BlackboxLogViewer() {
             });
     }
     
-    prefs.get('videoConfig', function(item) {
-        if (item) {
-            videoConfig = item;
-        } else {
-            videoConfig = {
-                width: 1280,
-                height: 720,
-                frameRate: 30,
-                videoDim: 0.4
-            };
-        }
-    });
+    function loadPreferences() {
+	    prefs.get('videoConfig', function (item) {
+		    if (item) {
+			    videoConfig = item;
+		    } else {
+			    videoConfig = {
+				    width: 1280,
+				    height: 720,
+				    frameRate: 30,
+				    videoDim: 0.4
+			    };
+		    }
+	    });
+	    
+	    graphPresets = new Presets([
+	        new Preset(
+	            "Default",
+                {graphs: GraphConfig.getExampleGraphConfigs(flightLog, ["Motors", "Gyros"]) },
+                true
+            )
+        ]);
+	
+	    // Do we have an old graphConfig to upgrade to the new preset format?
+	    prefs.get('graphConfig', function (item) {
+		    var
+                graphConfig = GraphConfig.load(item);
+		
+		    if (graphConfig) {
+			    prefs.remove('graphConfig');
+                
+			    graphPresets.add(new Preset("Custom preset", {graphs: graphConfig}, false));
+		    } else {
+		        // Okay, then do we have any of the new format "graphPresets"?
+		        prefs.get('graphPresets', function(item) {
+                    graphPresets.load(item, false);
+                });
+		    }
+	    });
+	    
+	    layoutPresets = new Presets([
+	        new Preset(
+	            "Default",
+                {layout: LayoutConfig.getDefaultConfig()},
+                true
+            )
+        ]);
+	
+	    prefs.get('layoutPresets', function (item) {
+		    layoutPresets.load(item, false);
+	    });
+    }
     
-    prefs.get('graphConfig', function(item) {
-        graphConfig = GraphConfig.load(item);
-        
-        if (!graphConfig) {
-            graphConfig = GraphConfig.getExampleGraphConfigs(flightLog, ["Motors", "Gyros"]);
-        }
-    });
+    loadPreferences();
+	
+	graphPresets.on("activePresetChange", function(newPreset) {
+		activeGraphConfig.adaptGraphs(flightLog, newPreset.content.graphs);
+	});
+	
+	graphPresets.on("change", function() {
+		prefs.set('graphPresets', graphPresets.save(false));
+	});
     
-    activeGraphConfig.addListener(function() {
-        invalidateGraph();
-    });
-    
-    $(document).ready(function() {
+    activeGraphConfig.on("change", invalidateGraph);
+	
+	layoutPresets.on("change", function() {
+		prefs.set('layoutPresets', layoutPresets.save(false));
+	});
+	
+	$(document).ready(function() {
         graphLegend = new GraphLegend($(".log-graph-legend"), activeGraphConfig, onLegendVisbilityChange);
         
         prefs.get('log-legend-hidden', function(item) {
@@ -754,18 +805,12 @@ function BlackboxLogViewer() {
         });
         
         var 
-            graphConfigDialog = new GraphConfigurationDialog($("#dlgGraphConfiguration"), function(newConfig) {
-                graphConfig = newConfig;
-                
-                activeGraphConfig.adaptGraphs(flightLog, graphConfig);
-                
-                prefs.set('graphConfig', graphConfig);
-            });
+            graphConfigDialog = new GraphConfigurationDialog($("#dlgGraphConfiguration"), graphPresets);
         
         $(".open-graph-configuration-dialog").click(function(e) {
             e.preventDefault();
             
-            graphConfigDialog.show(flightLog, graphConfig);
+            graphConfigDialog.show(flightLog);
         });
 
         $(".btn-video-export").click(function(e) {

@@ -163,10 +163,14 @@ html.has-log .log-graph-config {
 .config-graph-field select {
     margin-right:4px;
 }
+.config-graph h4,
+.config-graph .remove-single-graph-button {
+    display:inline-block;
+    vertical-align: baseline;
+}
 .config-graph h4 button {
     margin-left:0.5em;
 }
-
 
 #graphCanvas {
     position:absolute;
