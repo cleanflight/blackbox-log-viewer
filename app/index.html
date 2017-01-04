@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="css/jquery.nouislider.min.css">
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/preset_picker.css">
+<link rel="stylesheet" href="css/spinner.css">
 
 <script>
     window.$ = window.jQuery = require('jquery');
@@ -29,6 +30,7 @@
             </div>
             <div id="navbar" class="navbar-collapse collapse">
                 <div class="navbar-form navbar-right" role="form">
+                    <a class="btn btn-default open-layout-configuration-dialog">Layout settings</a>
                     <a class="btn btn-default btn-video-export"> Export video...</a>
                     <span class="btn btn-primary btn-file"> Open log file/video <input type="file" class="file-open" multiple></span>
                 </div>
@@ -312,6 +314,13 @@
                             </div>
                         </div>
                         <div class="form-group">
+                            <label class="col-sm-3 control-label">Screen layout</label>
+                            <div class="col-sm-9">
+                                <select class="form-control video-layout">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label class="col-sm-3 control-label">Framerate</label>
                             <div class="col-sm-9">
                                 <select class="form-control video-frame-rate">
@@ -410,32 +419,26 @@
         </div>
     </div>
 
-    <div class="modal fade" id="dlgSettings">
-        <div class="modal-dialog">
+    <div class="modal fade" id="dlgLayoutConfiguration">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">Layout settings</h4>
                 </div>
                 <div class="modal-body">
-                    <div class="form form-horizontal">
-                        <div class="form-group">
-                            <div class="col-sm-3 control-label">Layout preset</div>
-                            <div class="col-sm-9">
-                                <select class="layout-presets">
-                                </select>
-                            </div>
-                        </div>
-                        <table class="table">
-                            <tr>
-                                <th>Section</th>
-                                <th>Settings</th>
-                            </tr>
-                        </table>
-                    </div>
+                    <div class="layout-presets-picker"></div>
+                    <hr/>
+                    <table class="table">
+                        <thead>
+                        </thead>
+                        <tbody class="layout-displays-list">
+
+                        </tbody>
+                    </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default settings-dialog-cancel" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary settings-dialog-start" data-dismiss="modal">Ok</button>
+                    <button type="button" class="btn btn-default layout-settings-dialog-cancel" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary layout-settings-dialog-save" data-dismiss="modal">Save changes</button>
                 </div>
             </div>
         </div>
@@ -444,6 +447,7 @@
     <script src="js/vendor/jquery.ba-throttle-debounce.js"></script>
     <script src="js/vendor/three.min.js"></script>
     <script src="js/vendor/jquery.nouislider.all.min.js"></script>
+    <script src="js/spinner.js"></script>
     <script src="js/pref_storage.js"></script>
     <script src="js/tools.js"></script>
     <script src="js/cache.js"></script>
@@ -451,8 +455,6 @@
     <script src="js/datastream.js"></script>
     <script src="js/decoders.js"></script>
     <script src="js/imu.js"></script>
-    <script src="js/craft_2d.js"></script>
-    <script src="js/craft_3d.js"></script>
     <script src="js/flightlog_fielddefs.js"></script>
     <script src="js/flightlog_parser.js"></script>
     <script src="js/flightlog_index.js"></script>

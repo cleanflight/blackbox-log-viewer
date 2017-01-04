@@ -12,7 +12,7 @@ function leftPad(string, pad, minLength) {
 	return string;
 }
 
-function formatTime(msec, displayMsec) {
+function formatTime(msec, displayMsec, displayHours) {
 	var
 		secs, mins, hours;
 	
@@ -27,7 +27,7 @@ function formatTime(msec, displayMsec) {
 	hours = Math.floor(mins / 60);
 	mins %= 60;
 	
-	return (hours ? leftPad(hours, "0", 2) + ":" : "") + leftPad(mins, "0", 2) + ":" + leftPad(secs, "0", 2)
+	return (hours > 0 || displayHours ? leftPad(hours, "0", 1) + ":" : "") + leftPad(mins, "0", 2) + ":" + leftPad(secs, "0", 2)
 		+ (displayMsec ? "." + leftPad(msec, "0", 3) : "");
 }
 
@@ -55,4 +55,11 @@ function setFileExtension(filename, extension) {
 	return path.join(directory, name + extension);
 }
 
-module.exports = {leftPad, formatTime, setFileExtension};
+function formatFilesize(bytes) {
+	var
+		megs = Math.round(bytes / (1024 * 1024));
+	
+	return megs + "MB";
+}
+
+module.exports = {leftPad, formatTime, setFileExtension, formatFilesize};

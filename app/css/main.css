@@ -13,6 +13,12 @@ html, body {
     }
 }
 
+@media (min-width: 1700px) {
+    .container.main-pane {
+        width:1650px;
+    }
+}
+
 @media (min-width: 768px) {
     .welcome-pane .panel-body {
         min-height:320px;
@@ -345,4 +351,30 @@ progress {
 }
 .navbar-inverse .navbar-brand {
     color: #EAEAEA;
+}
+
+.layout-display {
+    white-space:nowrap;
+}
+.layout-display .form-group {
+    margin-right:0.75em;
+    vertical-align:top;
+}
+.layout-display label {
+    display:block;
+}
+.layout-display-xy .input-group {
+    margin-bottom:0.4em;
+}
+.layout-display-xy {
+    display:inline-flex !important;
+    flex-direction:column;
+    align-items:flex-start;
+    vertical-align:top;
+}
+.layout-display-xy .form-group label {
+    display:inline;
+}
+.layout-display .checkbox-inline {
+    margin-right:1em;
 }

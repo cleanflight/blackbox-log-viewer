@@ -1,7 +1,9 @@
 "use strict";
 
 const
-    EventEmitter = require("events");
+    EventEmitter = require("events"),
+	
+	cloneDeep = require('clone-deep');
 
 function GraphConfig(graphConfig) {
     var
@@ -85,13 +87,13 @@ function GraphConfig(graphConfig) {
                     
                     for (var k = 0; k < logFieldNames.length; k++) {
                         if (logFieldNames[k].match(nameRegex)) {
-                            newGraph.fields.push(adaptField($.extend({}, field, {name: logFieldNames[k]})));
+                            newGraph.fields.push(adaptField(Object.assign(cloneDeep(field), {name: logFieldNames[k]})));
                         }
                     }
                 } else {
                     // Don't add fields if they don't exist in this log
                     if (flightLog.getMainFieldIndexByName(field.name) !== undefined) {
-                        newGraph.fields.push(adaptField($.extend({}, field)));
+                        newGraph.fields.push(adaptField(cloneDeep(field)));
                     }
                 }
             }
@@ -301,7 +303,7 @@ GraphConfig.getDefaultCurveForField = function(flightLog, fieldName) {
  * @param {FlightLog} flightLog
  * @param {String[]?} graphNames - Supply to only fetch the graph with the given labels.
  *
- * @returns {GraphConfig[]}
+ * @returns {Object[]}
  */
 GraphConfig.getExampleGraphConfigs = function(flightLog, graphNames) {
     let

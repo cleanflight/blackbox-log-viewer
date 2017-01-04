@@ -2,16 +2,16 @@
 
 const
     EventEmitter = require('events'),
-	{formatTime} = require("./misc.js");
+	{formatTime, formatFilesize} = require("./misc.js"),
+	{Presets} = require("./presets.js");
 
-function formatFilesize(bytes) {
-	var
-		megs = Math.round(bytes / (1024 * 1024));
-	
-	return megs + "MB";
-}
-
-function VideoExportDialog(dialog) {
+/**
+ *
+ * @param {HTMLElement} dialog
+ * @param {Presets} layoutPresets
+ * @constructor
+ */
+function VideoExportDialog(dialog, layoutPresets) {
     const
         DIALOG_MODE_SETTINGS = 0,
         DIALOG_MODE_IN_PROGRESS = 1,
@@ -22,8 +22,9 @@ function VideoExportDialog(dialog) {
         progressRenderedFrames = $(".video-export-rendered-frames", dialog),
         progressRemaining = $(".video-export-remaining", dialog),
         progressSize = $(".video-export-size", dialog),
-        
-        that = this;
+		videoLayoutList = $(".video-layout", dialog),
+	
+		that = this;
     
     var
 	    dialogMode,
@@ -65,7 +66,7 @@ function VideoExportDialog(dialog) {
         $(".modal-title", dialog).text(title);
     }
 
-    function populateConfig(videoConfig) {
+    function populateUIWithVideoConfig(videoConfig) {
         if (videoConfig.frameRate) {
             $(".video-frame-rate").val(videoConfig.frameRate);
         }
@@ -86,6 +87,11 @@ function VideoExportDialog(dialog) {
         if (videoConfig.format) {
         	$(".video-format").val(videoConfig.format);
         }
+        if (videoConfig.layoutPresetName) {
+        	videoLayoutList.val(videoConfig.layoutPresetName);
+        } else {
+	        videoLayoutList.val(layoutPresets.getActivePreset().name);
+        }
     }
     
     function convertUIToVideoConfig() {
@@ -102,6 +108,9 @@ function VideoExportDialog(dialog) {
         videoConfig.height = parseInt(resolution.split("x")[1], 10);
         
         videoConfig.format = $(".video-format", dialog).val();
+        
+        videoConfig.layoutPresetName = videoLayoutList.val();
+	    videoConfig.layoutPreset = videoConfig.layoutPresetName == "(current)" ? layoutPresets.getActivePreset() : layoutPresets.get(videoConfig.layoutPresetName).content;
 
         return videoConfig;
     }
@@ -145,6 +154,22 @@ function VideoExportDialog(dialog) {
 		    }
 	    }
     }
+    
+    function populateLayoutPresetsList() {
+	    videoLayoutList.empty();
+	    
+	    videoLayoutList.append('<option value="(current)">Use viewer\'s current layout</option>');
+	    
+	    for (let preset of layoutPresets) {
+		    let
+			    option = $("<option></option>");
+		
+		    option.text(preset.name);
+		    option.attr("value", preset.name);
+		
+		    videoLayoutList.append(option)
+	    }
+    }
 
     this.show = function(logParameters, videoConfig) {
         setDialogMode(DIALOG_MODE_SETTINGS);
@@ -152,12 +177,14 @@ function VideoExportDialog(dialog) {
         videoDuration.text(formatTime(Math.round((logParameters.outTime - logParameters.inTime) / 1000), false));
         
         $(".jumpy-video-note").toggle(!!logParameters.flightVideo);
+   
+        populateLayoutPresetsList();
         
         dialog.modal('show');
         
         this.logParameters = logParameters;
         
-        populateConfig(videoConfig);
+        populateUIWithVideoConfig(videoConfig);
     };
     
     this.close = function() {

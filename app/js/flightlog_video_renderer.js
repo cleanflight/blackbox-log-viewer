@@ -330,7 +330,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions) {
         }
 	}
     
-    graph = new FlightLogGrapher(flightLog, logParameters.graphConfig, canvas, craftCanvas, {
+    graph = new FlightLogGrapher(flightLog, logParameters.graphConfig, videoOptions.layoutPreset, canvas, craftCanvas, {
         background: videoBackground
     });
     

@@ -101,12 +101,20 @@ function FlightLog(logData) {
     };
     
     /**
-     * Get the latest time seen in the log of the given index (in microseconds), or leave off the logIndex
-     * argument to fetch details for the current log.
-     */
-    this.getMaxTime = function(logIndex) {
-        return getRawStats(logIndex).frame["I"].field[FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME].max;
-    };
+	 * Get the latest time seen in the log of the given index (in microseconds), or leave off the logIndex
+	 * argument to fetch details for the current log.
+	 */
+	this.getMaxTime = function(logIndex) {
+		return getRawStats(logIndex).frame["I"].field[FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME].max;
+	};
+	
+	/**
+	 * Get the largest frame number seen in the log of the given index, or leave off the logIndex
+	 * argument to fetch details for the current log.
+	 */
+	this.getMaxFrame = function(logIndex) {
+		return getRawStats(logIndex).frame["I"].field[FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_ITERATION].max;
+	};
     
     /**
      * Get the flight controller system information that was parsed for the current log file.

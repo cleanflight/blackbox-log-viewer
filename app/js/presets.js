@@ -260,6 +260,8 @@ class Presets {
 			candidate.content = content;
 			candidate.system = bySystem;
 			
+			this.emit("validate", candidate.content);
+			
 			if (updatedActivePreset) {
 				this.emit("activePresetChange", this.active);
 			}
@@ -302,6 +304,8 @@ class Presets {
 			 */
 			this.updateSettings(preset.name, preset.content, preset.system);
 		} else {
+			this.emit("validate", preset.content);
+			
 			this.presets.push(preset);
 			
 			if (!this.active) {

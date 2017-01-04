@@ -106,7 +106,7 @@ function Craft2D(flightLog, canvas, propColors, craftParameters) {
     }
     
     this.resize = function(height) {
-        armLength = 0.5 * height;
+        armLength = 0.25 * height;
         
         if (numMotors >= 6) {
             bladeRadius = armLength * 0.4;
@@ -118,3 +118,5 @@ function Craft2D(flightLog, canvas, propColors, craftParameters) {
     // Assume we're to fill the entire canvas until we're told otherwise by .resize()
     this.resize(canvas.height);
 }
+
+module.exports = Craft2D;

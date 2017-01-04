@@ -11,6 +11,7 @@ const
     VideoExportDialog = require("./video_export_dialog.js"),
     GraphConfig = require("./graph_config.js"),
 	LayoutConfig = require("./layout_config.js"),
+	LayoutConfigurationDialog = require("./layout_config_dialog.js"),
 	GraphConfigurationDialog = require("./graph_config_dialog.js"),
     FlightLogGrapher = require("./grapher.js"),
     GraphLegend = require("./graph_legend.js"),
@@ -462,7 +463,7 @@ function BlackboxLogViewer() {
             graph.destroy();
         }
         
-        graph = new FlightLogGrapher(flightLog, activeGraphConfig, canvas, craftCanvas);
+        graph = new FlightLogGrapher(flightLog, activeGraphConfig, layoutPresets.getActivePreset(), canvas, craftCanvas);
         
         setVideoInTime(false);
         setVideoOutTime(false);
@@ -627,6 +628,35 @@ function BlackboxLogViewer() {
             });
     }
     
+    function createDialogs() {
+	    var
+		    graphConfigDialog = new GraphConfigurationDialog($("#dlgGraphConfiguration"), graphPresets);
+	
+	    $(".open-graph-configuration-dialog").click(function(e) {
+		    e.preventDefault();
+		
+		    graphConfigDialog.show(flightLog);
+	    });
+	
+	    var
+		    layoutConfigDialog = new LayoutConfigurationDialog($("#dlgLayoutConfiguration"), layoutPresets);
+	
+	    $(".open-layout-configuration-dialog").click(function(e) {
+		    e.preventDefault();
+		
+		    layoutConfigDialog.show(flightLog);
+	    });
+	
+	    videoExportDialog = new VideoExportDialog($("#dlgVideoExport"), layoutPresets);
+	
+	    videoExportDialog.on("optionsChosen", onVideoExportOptionsChosen);
+	
+	    $(".btn-video-export").click(function(e) {
+		    showVideoExportDialog();
+		    e.preventDefault();
+	    });
+    }
+    
     function loadPreferences() {
 	    prefs.get('videoConfig', function (item) {
 		    if (item) {
@@ -666,35 +696,51 @@ function BlackboxLogViewer() {
 		    }
 	    });
 	    
-	    layoutPresets = new Presets([
-	        new Preset(
-	            "Default",
-                {layout: LayoutConfig.getDefaultConfig()},
-                true
-            )
-        ]);
+	    let
+            defaultLayout = LayoutConfig.getDefaultConfig();
+	    
+	    layoutPresets = new Presets();
 	
+	    layoutPresets.on("validate", function(preset) {
+	        LayoutConfig.fixUp(preset, defaultLayout);
+	    });
+	
+	    layoutPresets.add(new Preset(
+		    "Default",
+		    defaultLayout,
+		    true
+	    ));
+        
 	    prefs.get('layoutPresets', function (item) {
 		    layoutPresets.load(item, false);
+	    });
+    }
+
+    function attachPreferenceChangeHandlers() {
+	    graphPresets.on("activePresetChange", function(newPreset) {
+		    activeGraphConfig.adaptGraphs(flightLog, newPreset.content.graphs);
+		    invalidateGraph();
+	    });
+	
+	    layoutPresets.on("activePresetChange", function() {
+	        graph.setDisplayConfig(layoutPresets.getActivePreset());
+	        invalidateGraph();
+	    });
+	
+	    // Persist preferences to storage every time they are changed (not just at program exit)
+	    layoutPresets.on("change", function() {
+		    prefs.set('layoutPresets', layoutPresets.save(false));
+	    });
+	
+	    graphPresets.on("change", function() {
+		    prefs.set('graphPresets', graphPresets.save(false));
 	    });
     }
     
     loadPreferences();
 	
-	graphPresets.on("activePresetChange", function(newPreset) {
-		activeGraphConfig.adaptGraphs(flightLog, newPreset.content.graphs);
-	});
-	
-	graphPresets.on("change", function() {
-		prefs.set('graphPresets', graphPresets.save(false));
-	});
-    
-    activeGraphConfig.on("change", invalidateGraph);
-	
-	layoutPresets.on("change", function() {
-		prefs.set('layoutPresets', layoutPresets.save(false));
-	});
-	
+    attachPreferenceChangeHandlers();
+
 	$(document).ready(function() {
         graphLegend = new GraphLegend($(".log-graph-legend"), activeGraphConfig, onLegendVisbilityChange);
         
@@ -703,10 +749,6 @@ function BlackboxLogViewer() {
                 graphLegend.hide();
             }
         });
-	
-	    videoExportDialog = new VideoExportDialog($("#dlgVideoExport"));
-	
-	    videoExportDialog.on("optionsChosen", onVideoExportOptionsChosen);
 	
 	    $(".file-open").change(function(e) {
             var 
@@ -804,19 +846,7 @@ function BlackboxLogViewer() {
             }
         });
         
-        var 
-            graphConfigDialog = new GraphConfigurationDialog($("#dlgGraphConfiguration"), graphPresets);
-        
-        $(".open-graph-configuration-dialog").click(function(e) {
-            e.preventDefault();
-            
-            graphConfigDialog.show(flightLog);
-        });
-
-        $(".btn-video-export").click(function(e) {
-            showVideoExportDialog();
-            e.preventDefault();
-        });
+        createDialogs();
         
         $(window).resize(updateCanvasSize);
         

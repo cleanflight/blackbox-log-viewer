@@ -175,7 +175,7 @@ function Craft3D(flightLog, canvas, propColors) {
     
     var
         scene = new THREE.Scene(),
-        camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000),
+        camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000),
     
         renderer = new THREE.WebGLRenderer({canvas : canvas, alpha: true}),
     
@@ -302,3 +302,5 @@ function Craft3D(flightLog, canvas, propColors) {
         }
     }
 }
+
+module.exports = Craft3D;
