@@ -73,8 +73,15 @@ function GraphConfig(graphConfig) {
                         colorIndex++;
                     }
                     
-                    if (field.smoothing === undefined) {
+                    if (field.smoothing === undefined || field.smoothing == "default") {
                         field.smoothing = GraphConfig.getDefaultSmoothingForField(flightLog, field.name);
+                    } else {
+	                    let
+		                    smoothing = parseInt(field.smoothing, 10);
+	
+	                    if (!isNaN(smoothing)) {
+		                    field.smoothing = smoothing;
+	                    }
                     }
                     
                     return field;

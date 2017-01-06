@@ -8,6 +8,23 @@ const
     {Presets} = require("./presets.js"),
     PresetPicker = require("./preset_picker.js");
 
+function formatTinyInterval(nanos) {
+	let
+		millis = Math.floor(nanos / 1000);
+	
+	nanos = nanos % 1000;
+	
+	if (millis > 0) {
+		if (nanos == 0) {
+			return millis + "ms";
+		} else {
+			return (millis + nanos / 1000).toFixed(1) + "ms";
+		}
+	} else {
+		return nanos + "ns";
+	}
+}
+
 /**
  *
  * @param {HTMLElement} dialog - Root dialog element to attach to
@@ -15,9 +32,22 @@ const
  * @constructor
  */
 function GraphConfigurationDialog(dialog, graphPresets) {
+	const
+		// Some fields it doesn't make sense to graph
+		BLACKLISTED_FIELDS = {time:true, loopIteration:true},
+		
+		SUGGESTED_SMOOTHING_INTERVALS = [
+			500, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 15000, 20000, 30000, 40000, 50000
+		],
+	
+	    SMOOTHING_OPTIONS = SUGGESTED_SMOOTHING_INTERVALS.map(interval => ({
+		    name: formatTinyInterval(interval),
+		    value: interval
+	    })),
+		
+		that = this;
+	    
     var
-        // Some fields it doesn't make sense to graph
-        BLACKLISTED_FIELDS = {time:true, loopIteration:true},
         offeredFieldNames = [],
         exampleGraphs = [],
 	
@@ -41,17 +71,14 @@ function GraphConfigurationDialog(dialog, graphPresets) {
 	
     }
     
-	function renderFieldOption(fieldName, selectedName) {
-        var 
-            option = $("<option></option>")
-                .text(FlightLogFieldPresenter.fieldNameToFriendly(fieldName))
-                .attr("value", fieldName);
-    
-        if (fieldName == selectedName) {
-            option.attr("selected", "selected");
-        }
-        
-        return option;
+    function renderOptionElem(value, displayName) {
+	    var
+		    result = document.createElement("option");
+	    
+	    result.innerText = displayName;
+	    result.value = value;
+	    
+	    return result;
     }
     
     /**
@@ -60,19 +87,46 @@ function GraphConfigurationDialog(dialog, graphPresets) {
      */
     function renderField(field) {
         let
-            elem = $(
-                '<li class="config-graph-field">'
-                    + '<select class="form-control"><option value="">(choose a field)</option></select>'
-                    + '<button type="button" class="btn btn-default btn-sm">Remove</button>'
-                + '</li>'
-            ),
-            select = $('select', elem),
+            elem = $(`
+                <tr class="config-graph-field">
+                	<td>
+                   		<select class="form-control graph-field-name">
+                   			<option value="">(choose a field)</option>
+                        </select>
+                    </td>
+	                <td>
+	                	<select class="form-control graph-field-smoothing"></select>
+                    </td>
+                    <td>
+                    	<button type="button" class="btn btn-default btn-sm">Remove</button>
+                    </td>
+                </tr>
+            `),
+            fieldNameSelect = $('.graph-field-name', elem),
+	        smoothingSelect = $('.graph-field-smoothing', elem),
+	        
             selectedFieldName = field ? field.name : false;
-        
-        for (let fieldName of offeredFieldNames) {
-            select.append(renderFieldOption(fieldName, selectedFieldName));
-        }
-        
+	
+	    fieldNameSelect.append(offeredFieldNames.map(name => renderOptionElem(name, FlightLogFieldPresenter.fieldNameToFriendly(name))));
+	    fieldNameSelect.val(selectedFieldName);
+	    
+	    let
+		    defaultSmoothingMessage = "Default";
+	    
+	    if (selectedFieldName) {
+		    let
+			    defaultSmoothing = GraphConfig.getDefaultSmoothingForField(that.flightLog, selectedFieldName);
+		    
+		    defaultSmoothingMessage += " (" + (defaultSmoothing ? formatTinyInterval(defaultSmoothing) : "none") + ")";
+	    }
+	    
+	    smoothingSelect.append(renderOptionElem("default", defaultSmoothingMessage));
+	    smoothingSelect.append(renderOptionElem("0", "None"));
+	
+	    smoothingSelect.append(SMOOTHING_OPTIONS.map(suggestion => renderOptionElem(suggestion.value, suggestion.name)));
+
+	    smoothingSelect.val(field.smoothing === undefined ? "default" : field.smoothing);
+	    
         return elem;
     }
     
@@ -96,7 +150,23 @@ function GraphConfigurationDialog(dialog, graphPresets) {
                                 <div class="form-group">
                                     <label class="col-sm-2 control-label">Fields</label>
                                     <div class="col-sm-10">
-                                        <ul class="config-graph-field-list form-group-sm form-inline list-unstyled"></ul>
+                                        <table class="config-graph-field-list form-group-sm table table-condensed">
+                                        	<thead>
+		                                        <tr>
+				                                    <th>
+				                                        Field name
+													</th>
+			                                        <th>
+			                                            Smoothing
+				                                    </th>
+				                                    <th>
+				                                        &nbsp;
+				                                    </th>
+			                                    </tr>
+		                                    </thead>
+		                                    <tbody>
+											</tbody>
+										</table>
                                         <button type="button" class="btn btn-default btn-sm add-field-button"><span class="glyphicon glyphicon-plus"></span> Add field</button>
                                     </div>
                                 </div>
@@ -105,7 +175,7 @@ function GraphConfigurationDialog(dialog, graphPresets) {
                     </dl>
                 </li>
 	        `),
-            fieldList = $(".config-graph-field-list", graphElem),
+            fieldList = $(".config-graph-field-list tbody", graphElem),
             graphNameField = $("input", graphElem);
         
         graphNameField
@@ -130,14 +200,25 @@ function GraphConfigurationDialog(dialog, graphPresets) {
 	        .append(graph.fields.map(renderField))
         
             // Catch field dropdown changes
-            .on("change", "select", function(e) {
+            .on("change", ".graph-field-name", function(e) {
 		        let
 			        fieldIndex = $(this).parents('.config-graph-field').index();
 		
 		        updateActivePreset(preset => preset.graphs[graphIndex].fields[fieldIndex].name = $(e.target).val());
 	        })
-        
-            // Remove field button
+	        .on("change", ".graph-field-smoothing", function(e) {
+		        let
+			        fieldIndex = $(this).parents('.config-graph-field').index(),
+			        newVal = $(e.target).val();
+		        
+		        if (!isNaN(parseInt(newVal, 10))) {
+		        	newVal = parseInt(newVal, 10);
+		        }
+		
+		        updateActivePreset(preset => preset.graphs[graphIndex].fields[fieldIndex].smoothing = newVal);
+	        })
+	
+	        // Remove field button
             .on('click', 'button', function(e) {
 	            let
 	                fieldIndex = $(this).parents('.config-graph-field').index();
@@ -247,6 +328,8 @@ function GraphConfigurationDialog(dialog, graphPresets) {
     this.show = function(flightLog) {
         // We'll restore this backup if the user cancels the dialog
         graphPresetsBackup = graphPresets.clone();
+        
+        this.flightLog = flightLog;
         
 	    populateExampleGraphs(flightLog, exampleGraphsMenu);
 	    buildOfferedFieldNamesList(flightLog, graphPresets.getActivePreset().graphs);

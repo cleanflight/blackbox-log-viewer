@@ -163,12 +163,6 @@ html.has-log .log-graph-config {
 .config-graph dd {
     margin-top:0.5em;
 }
-.config-graph-field {
-    margin:0.5em 0;
-}
-.config-graph-field select {
-    margin-right:4px;
-}
 .config-graph h4,
 .config-graph .remove-single-graph-button {
     display:inline-block;
@@ -176,6 +170,10 @@ html.has-log .log-graph-config {
 }
 .config-graph h4 button {
     margin-left:0.5em;
+}
+.config-graph .table > tbody > tr > td,
+.config-graph .table > thead:first-child > tr:first-child > th {
+    border: none;
 }
 
 #graphCanvas {
