@@ -133,7 +133,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions) {
         that.emit("complete", success, frameCount);
     }
     
-    function finishRender() {
+    function finishRender(success) {
         var
             complete;
         
@@ -146,7 +146,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions) {
         }
         
         complete.then(function() {
-            notifyCompletion(true, frameIndex);
+            notifyCompletion(success, frameIndex);
         });
     }
     
@@ -162,7 +162,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions) {
             framesToRender = Math.min(workChunkSize, frameCount - frameIndex);
         
         if (cancel) {
-            notifyCompletion(false);
+            finishRender(false);
             return;
         }
         
@@ -171,7 +171,7 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions) {
                 that.emit("progress", frameIndex, frameCount, that.getWrittenSize());
                 
                 if (frameIndex >= frameCount) {
-                    finishRender();
+                    finishRender(true);
                 } else {
                     setTimeout(renderChunk, 0);
                 }
