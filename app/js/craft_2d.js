@@ -80,8 +80,8 @@ function Craft2D(flightLog, canvas, propColors, craftParameters) {
                 canvasContext.beginPath();
     
                 canvasContext.moveTo(0, 0);
-                canvasContext.arc(0, 0, bladeRadius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 
-                        * Math.max(motorValue - sysConfig.minthrottle, 0) / (sysConfig.maxthrottle - sysConfig.minthrottle), false);
+                canvasContext.arc(0, 0, bladeRadius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2
+                        * Math.max(motorValue - sysConfig.motorOutputLow, 0) / (sysConfig.motorOutputHigh - sysConfig.motorOutputLow), false);
                 
                 canvasContext.fill();
     

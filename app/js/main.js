@@ -333,7 +333,7 @@ function BlackboxLogViewer() {
         }
         
         seekBar.setTimeRange(flightLog.getMinTime(), flightLog.getMaxTime(), currentBlackboxTime);
-        seekBar.setActivityRange(flightLog.getSysConfig().minthrottle, flightLog.getSysConfig().maxthrottle);
+        seekBar.setActivityRange(flightLog.getSysConfig().motorOutputLow, flightLog.getSysConfig().motorOutputHigh);
         
         var 
             activity = flightLog.getActivitySummary();

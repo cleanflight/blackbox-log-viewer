@@ -52,8 +52,11 @@ var FlightLogParser = function(logData) {
         
         //Predict the last time value written in the main stream
         FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME = 10,
-
-        //Home coord predictors appear in pairs (two copies of FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD). Rewrite the second
+	
+	    //Predict that this field is the minimum motor output
+	    FLIGHT_LOG_FIELD_PREDICTOR_MINMOTOR       = 11,
+	
+	    //Home coord predictors appear in pairs (two copies of FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD). Rewrite the second
         //one we see to this to make parsing easier
         FLIGHT_LOG_FIELD_PREDICTOR_HOME_COORD_1   = 256,
         
@@ -184,6 +187,8 @@ var FlightLogParser = function(logData) {
             acc_1G: 4096, // Ditto ^
             minthrottle: 1150,
             maxthrottle: 1850,
+            motorOutputLow: 1150,
+            motorOutputHigh: 1850,
             currentMeterOffset: 0,
             currentMeterScale: 400,
             deviceUID: null
@@ -327,9 +332,22 @@ var FlightLogParser = function(logData) {
             break;
             case "minthrottle":
                 that.sysConfig.minthrottle = parseInt(fieldValue, 10);
+                
+                // Convert to new field name compatible with Betaflight
+                that.sysConfig.motorOutputLow = that.sysConfig.minthrottle;
             break;
             case "maxthrottle":
                 that.sysConfig.maxthrottle = parseInt(fieldValue, 10);
+	
+	            // Convert to new field name compatible with Betaflight
+	            that.sysConfig.motorOutputHigh = that.sysConfig.maxthrottle;
+            break;
+            case "motorOutput":
+                var
+                     motorOutput = parseCommaSeparatedIntegers(fieldValue);
+                
+                that.sysConfig.motorOutputLow = motorOutput[0];
+	            that.sysConfig.motorOutputHigh = motorOutput[1];
             break;
             case "rcRate":
                 that.sysConfig.rcRate = parseInt(fieldValue, 10);
@@ -770,6 +788,9 @@ var FlightLogParser = function(logData) {
             case FLIGHT_LOG_FIELD_PREDICTOR_LAST_MAIN_FRAME_TIME:
                 if (mainHistory[1])
                     value += mainHistory[1][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME];
+            break;
+	        case FLIGHT_LOG_FIELD_PREDICTOR_MINMOTOR:
+		        value = (value | 0) + that.sysConfig.motorOutputLow;
             break;
             default:
                 throw "Unsupported field predictor " + predictor;

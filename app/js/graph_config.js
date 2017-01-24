@@ -204,9 +204,9 @@ GraphConfig.getDefaultCurveForField = function(flightLog, fieldName) {
     
     if (fieldName.match(/^motor\[/)) {
         return {
-            offset: -(sysConfig.maxthrottle + sysConfig.minthrottle) / 2,
+            offset: -(sysConfig.motorOutputHigh + sysConfig.motorOutputLow) / 2,
             power: 1.0,
-            inputRange: (sysConfig.maxthrottle - sysConfig.minthrottle) / 2,
+            inputRange: (sysConfig.motorOutputHigh - sysConfig.motorOutputLow) / 2,
             outputRange: 1.0
         };
     } else if (fieldName.match(/^servo\[/)) {
