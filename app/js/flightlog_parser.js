@@ -9,10 +9,11 @@ var FlightLogParser = function(logData) {
         FLIGHT_LOG_MAX_FRAME_LENGTH = 256,
         
         FIRMWARE_TYPE_UNKNOWN = 0,
-        FIRMWARE_TYPE_BASEFLIGHT = 1,
+        FIRMWARE_TYPE_BASEFLIGHT  = 1,
         FIRMWARE_TYPE_CLEANFLIGHT = 2,
-        
-        //Assume that even in the most woeful logging situation, we won't miss 10 seconds of frames
+	    FIRMWARE_TYPE_BETAFLIGHT  = 3,
+	
+	    //Assume that even in the most woeful logging situation, we won't miss 10 seconds of frames
         MAXIMUM_TIME_JUMP_BETWEEN_FRAMES = (10 * 1000000),
 
         //Likewise for iteration count
@@ -372,12 +373,13 @@ var FlightLogParser = function(logData) {
                 that.sysConfig.currentMeterScale = currentMeterParams[1];
             break;
             case "gyro.scale":
-                that.sysConfig.gyroScale = hexToFloat(fieldValue);
+	        case "gyro_scale":
+		        that.sysConfig.gyroScale = hexToFloat(fieldValue);
         
                 /* Baseflight uses a gyroScale that'll give radians per microsecond as output, whereas Cleanflight produces degrees
                  * per second and leaves the conversion to radians per us to the IMU. Let's just convert Cleanflight's scale to
                  * match Baseflight so we can use Baseflight's IMU for both: */
-                if (that.sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) {
+                if (that.sysConfig.firmwareType != FIRMWARE_TYPE_BASEFLIGHT) {
                     that.sysConfig.gyroScale = that.sysConfig.gyroScale * (Math.PI / 180.0) * 0.000001;
                 }
             break;
