@@ -1,7 +1,7 @@
 {
   "name": "cleanflight-blackbox-explorer",
   "productName": "Cleanflight Blackbox Explorer",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Analyze your Cleanflight and Betaflight flight logs",
   "main": "main/index.js",
   "repository": "https://github.com/cleanflight/blackbox-log-viewer.git",
