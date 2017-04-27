@@ -293,6 +293,9 @@ var FlightLogParser = function(logData) {
         lastMainFrameIteration,
         lastMainFrameTime,
 
+        // When 32-bit time values roll over to zero, we add 2^32 to this accumulator so it can be added to the time:
+        timeRolloverAccumulator = 0,
+        
         //The actual log data stream we're reading:
         stream;
 
@@ -706,50 +709,73 @@ var FlightLogParser = function(logData) {
         }
     }
 
-    function completeIntraframe(frameType, frameStart, frameEnd, raw) {
-        var acceptFrame = true;
+    function castTo32BitUnsigned(val) {
+        return val >>> 0;
+    }
 
-        // Do we have a previous frame to use as a reference to validate field values against?
-        if (!raw && lastMainFrameIteration != -1) {
-            /*
-             * Check that iteration count and time didn't move backwards, and didn't move forward too much.
-             */
-            acceptFrame =
-                mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_ITERATION] >= lastMainFrameIteration
-                && mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_ITERATION] < lastMainFrameIteration + MAXIMUM_ITERATION_JUMP_BETWEEN_FRAMES
-                && mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME] >= lastMainFrameTime
-                && mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME] < lastMainFrameTime + MAXIMUM_TIME_JUMP_BETWEEN_FRAMES;
+	function applyTimeRollover() {
+		if (lastMainFrameTime != -1) {
+			if (
+				// If we appeared to travel backwards in time (modulo 32 bits)...
+                (castTo32BitUnsigned(mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME]) < castTo32BitUnsigned(lastMainFrameTime))
+                // But we actually just incremented a reasonable amount (modulo 32-bits)...
+                && castTo32BitUnsigned(castTo32BitUnsigned(mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME]) - castTo32BitUnsigned(lastMainFrameTime)) < MAXIMUM_TIME_JUMP_BETWEEN_FRAMES
+            ) {
+                    // 32-bit time counter has wrapped, so add 2^32 to the timestamp
+                    timeRolloverAccumulator += 0x100000000;
+            }
         }
+		
+		mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME] = castTo32BitUnsigned(mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME]) + timeRolloverAccumulator;
+	}
 
-        if (acceptFrame) {
+    function validateMainFrameValues() {
+        // Check that iteration count and time didn't move backwards, and didn't move forward too much.
+        return (
+            mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_ITERATION] >= lastMainFrameIteration
+         && mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_ITERATION] < lastMainFrameIteration + MAXIMUM_ITERATION_JUMP_BETWEEN_FRAMES
+         && mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME] >= lastMainFrameTime
+         && mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME] < lastMainFrameTime + MAXIMUM_TIME_JUMP_BETWEEN_FRAMES
+        );
+    }
+
+    function completeIntraframe(frameType, frameStart, frameEnd, raw) {
+	    applyTimeRollover();
+		
+	    // Only attempt to validate the frame values if we have something to check it against
+	    if (!raw && lastMainFrameIteration != -1 && !validateMainFrameValues()) {
+		    invalidateMainStream();
+	    } else {
+		    mainStreamIsValid = true;
+	    }
+
+        if (mainStreamIsValid) {
             that.stats.intentionallyAbsentIterations += countIntentionallySkippedFramesTo(mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_ITERATION]);
 
             lastMainFrameIteration = mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_ITERATION];
             lastMainFrameTime = mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME];
-
-            mainStreamIsValid = true;
-
-            updateFieldStatistics(frameType, mainHistory[0]);
-        } else {
-            invalidateMainStream();
+            
+            updateFieldStatistics(frameType, mainHistory[0]);            
         }
 
         if (that.onFrameReady)
             that.onFrameReady(mainStreamIsValid, mainHistory[0], frameType, frameStart, frameEnd - frameStart);
 
-        // Rotate history buffers
-
-        // Both the previous and previous-previous states become the I-frame, because we can't look further into the past than the I-frame
-        mainHistory[1] = mainHistory[0];
-        mainHistory[2] = mainHistory[0];
-
-        // And advance the current frame into an empty space ready to be filled
-        if (mainHistory[0] == mainHistoryRing[0])
-            mainHistory[0] = mainHistoryRing[1];
-        else if (mainHistory[0] == mainHistoryRing[1])
-            mainHistory[0] = mainHistoryRing[2];
-        else
-            mainHistory[0] = mainHistoryRing[0];
+        if (mainStreamIsValid) {
+	        // Rotate history buffers
+	
+	        // Both the previous and previous-previous states become the I-frame, because we can't look further into the past than the I-frame
+	        mainHistory[1] = mainHistory[0];
+	        mainHistory[2] = mainHistory[0];
+	
+	        // And advance the current frame into an empty space ready to be filled
+	        if (mainHistory[0] == mainHistoryRing[0])
+		        mainHistory[0] = mainHistoryRing[1];
+	        else if (mainHistory[0] == mainHistoryRing[1])
+		        mainHistory[0] = mainHistoryRing[2];
+	        else
+		        mainHistory[0] = mainHistoryRing[0];
+        }
     }
 
     /**
@@ -894,16 +920,13 @@ var FlightLogParser = function(logData) {
     }
 
     function completeInterframe(frameType, frameStart, frameEnd, raw) {
-        // Reject this frame if the time or iteration count jumped too far
-        if (mainStreamIsValid && !raw
-                && (
-                    mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME] > lastMainFrameTime + MAXIMUM_TIME_JUMP_BETWEEN_FRAMES
-                    || mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_ITERATION] > lastMainFrameIteration + MAXIMUM_ITERATION_JUMP_BETWEEN_FRAMES
-                )) {
-            mainStreamIsValid = false;
-        }
-
-        if (mainStreamIsValid) {
+	    applyTimeRollover();
+		
+	    if (mainStreamIsValid && !raw && !validateMainFrameValues()) {
+		    invalidateMainStream();
+	    }
+	
+	    if (mainStreamIsValid) {
             lastMainFrameIteration = mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_ITERATION];
             lastMainFrameTime = mainHistory[0][FlightLogParser.prototype.FLIGHT_LOG_FIELD_INDEX_TIME];
 
@@ -1126,7 +1149,7 @@ var FlightLogParser = function(logData) {
 
         switch (eventType) {
             case FlightLogEvent.SYNC_BEEP:
-                lastEvent.data.time = stream.readUnsignedVB();
+                lastEvent.data.time = stream.readUnsignedVB() + timeRolloverAccumulator;
                 lastEvent.time = lastEvent.data.time;
             break;
             case FlightLogEvent.FLIGHT_MODE: // get the flag status change
@@ -1207,7 +1230,7 @@ var FlightLogParser = function(logData) {
             break;
             case FlightLogEvent.LOGGING_RESUME:
                 lastEvent.data.logIteration = stream.readUnsignedVB();
-                lastEvent.data.currentTime = stream.readUnsignedVB();
+                lastEvent.data.currentTime = stream.readUnsignedVB() + timeRolloverAccumulator;
             break;
             case FlightLogEvent.LOG_END:
                 var endMessage = stream.readString(END_OF_LOG_MESSAGE.length);
@@ -1239,6 +1262,8 @@ var FlightLogParser = function(logData) {
         lastMainFrameIteration = -1;
         lastMainFrameTime = -1;
 
+        timeRolloverAccumulator = 0;
+        
         invalidateMainStream();
         gpsHomeIsValid = false;
         lastEvent = null;
@@ -1361,6 +1386,9 @@ var FlightLogParser = function(logData) {
         }
     };
 
+    this.setTimeRolloverAccumulator = function(newTimeRolloverAccumulator) {
+        timeRolloverAccumulator = newTimeRolloverAccumulator;
+    };
 
     /**
      * Continue the current parse by scanning the given range of offsets for data. To begin an independent parse,
@@ -1399,6 +1427,7 @@ var FlightLogParser = function(logData) {
                         sizeCount: new Int32Array(256), /* int32 arrays are zero-filled, handy! */
                         validCount: 0,
                         corruptCount: 0,
+                        desyncCount: 0,
                         field: []
                     };
                 }
