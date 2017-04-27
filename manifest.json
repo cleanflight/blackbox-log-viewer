@@ -1,6 +1,6 @@
 {
-  "name": "Betaflight - Blackbox Explorer",
-  "description": "Interactive flight log viewer for Betaflight",
+  "name": "CleanFlight - Blackbox Explorer",
+  "description": "Interactive flight log viewer for CleanFlight/Betaflight and others",
   "version": "2.5.11",
   "manifest_version": 2,
   "app": {
