@@ -422,8 +422,7 @@ var FlightLogParser = function(logData) {
             break;
             case "rcRate":
             case "rcExpo":
-            case "rcYawExpo":
-            case "rcYawRate":
+            case "rcYawExpo":            
             case "thrMid":
             case "thrExpo":
             case "dynThrPID":
@@ -477,7 +476,12 @@ var FlightLogParser = function(logData) {
             case "debug_mode":
                 that.sysConfig[fieldName] = parseInt(fieldValue, 10);
             break;
-
+            
+            case "rc_rate_yaw":
+            case "rcYawRate":
+                that.sysConfig.rcYawRate = parseInt(fieldValue, 10);
+            break;
+               
             case "yawRateAccelLimit":
             case "rateAccelLimit":
             case "anti_gravity_gain":
