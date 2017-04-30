@@ -1,0 +1,85 @@
+{
+  "name": "CleanflightBlackboxExplorer",
+  "productName": "Cleanflight Blackbox Explorer",
+  "version": "2.5.10",
+  "description": "A data analyser for Cleanflight/Betaflight Flight Controller logs.",
+  "main": "main.js",
+  "scripts": {
+    "postinstall": "install-app-deps",
+    "start": "electron .",
+    "debug": "electron . --debug",
+    "clean:all": "rm -rf ./packages",
+    "clean:osx": "rm -rf ./packages/osx",
+    "clean:win": "rm -rf ./packages/win",
+    "clean:linux": "rm -rf ./packages/linux",
+    "pack:osx": "npm run clean:osx && electron-packager . 'Cleanflight Blackbox Viewer' --out=./packages/osx --ignore=packages --ignore=dist --platform=darwin --arch=all --version=1.4.3 --icon=resources/images/icons/bf_blackbox_logo.icns --overwrite",
+    "pack:win": "npm run clean:win && electron-packager . 'Cleanflight Blackbox Viewer' --out=./packages/win --ignore=packages  --ignore=dist --platform=win32  --arch=all --version=1.4.3 --icon=resources/images/icons/bf_blackbox_logo.ico --overwrite",
+    "pack:linux": "npm run clean:linux && electron-packager . 'Cleanflight Blackbox Viewer' --out=./packages/linux --ignore=packages  --ignore=dist --platform=linux  --arch=all --version=1.4.3 --icon=resources/images/icons/bf_blackbox_logo.icns --overwrite",
+    "pack:all": "npm run pack:osx && npm run pack:win && npm run pack:linux",
+    "clean:build": "rm -rf ./dist",
+    "build:osx": "build --mac --em.productName='Cleanflight Blackbox Explorer macOS'",
+    "build:win32": "build --win --ia32 --em.productName='Cleanflight Blackbox Explorer Win x32'",
+    "build:win64": "build --win --x64 --em.productName='Cleanflight Blackbox Explorer Win x64'",
+    "build:win": "npm run build:win32 && npm run build:win64 && rm -rf ./dist/win*",
+    "build:linux": "build --linux",
+    "build:all": "npm run clean:build && npm run build:osx && npm run build:win"
+  },
+  "build": {
+    "appId": "com.cleanflight.blackboxexplorer",
+    "mac": {
+      "category": "public.hobby.tools",
+      "icon": "resources/images/icons/bf_blackbox_logo.icns"
+    },
+    "win": {
+      "title": "Cleanflight Blackbox Viewer",
+      "icon": "resources/images/icons/bf_blackbox_logo.ico"
+    },
+    "linux": {
+      "category": "System",
+      "maintainer": "cleanflight development team",
+      "icon": "resources/images/icons/bf_blackbox_logo.icns"
+    },
+    "dmg": {
+      "title": "Cleanflight Blackbox Viewer",
+      "background": "resources/images/background.png",
+      "icon": "resources/images/icons/bf_blackbox_logo.icns",
+      "iconSize": 80,
+      "contents": [
+        {
+          "x": 66,
+          "y": 280,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 66,
+          "y": 170,
+          "type": "file"
+        }
+      ]
+    },
+    "fileAssociations": {
+      "ext": "bfl",
+      "name": "BFL",
+      "desciption": "Betaflight Log File",
+      "role": "Viewer",
+      "isPackage": "false"
+    }
+  },
+  "devDependencies": {
+    "electron-builder": "next",
+    "electron": "1.4.3"
+  },
+  "repository": "https://github.com/GaryKeeble/blackbox-log-viewer-ng",
+  "keywords": [
+    "cleanflight",
+    "betaflight",
+    "blackbox",
+    "viewer"
+  ],
+  "author": "Gary.S.Keeble",
+  "license": "GPLv3",
+  "dependencies": {
+    "electron-window-state": "^4.0.1"
+  }
+}
