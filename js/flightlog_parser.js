@@ -421,8 +421,7 @@ var FlightLogParser = function(logData) {
                 that.sysConfig.motorOutput[1] = that.sysConfig[fieldName]; // by default, set the maxMotorOutput to match maxThrottle
             break;
             case "rcRate":
-            case "rcExpo":
-            case "rcYawExpo":            
+            case "rcExpo":                        
             case "thrMid":
             case "thrExpo":
             case "dynThrPID":
@@ -476,12 +475,17 @@ var FlightLogParser = function(logData) {
             case "debug_mode":
                 that.sysConfig[fieldName] = parseInt(fieldValue, 10);
             break;
-            
+                        	
             case "rc_rate_yaw":
             case "rcYawRate":
                 that.sysConfig.rcYawRate = parseInt(fieldValue, 10);
             break;
-               
+            
+            case "rc_yaw_expo":
+            case "rcYawExpo":            
+				that.sysConfig.rcYawExpo = parseInt(fieldValue, 10);
+            break;
+
             case "yawRateAccelLimit":
             case "rateAccelLimit":
             case "anti_gravity_gain":
