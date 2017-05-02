@@ -1,5 +1,9 @@
 "use strict";
 
+const
+	{dialog} = (typeof require !== 'undefined') ? require('electron').remote : '',
+	fs = (typeof require !== 'undefined') ? require('fs') : null;
+
 /**
  * Render a video of the given log using the given videoOptions (user video settings) and logParameters.
  * 
@@ -93,8 +97,9 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
     function supportsFileWriter() {
         if (isInsideChrome()) {
             return !!(chrome && chrome.fileSystem);
-        }
-        return false;
+        } else {
+        	return (fs);
+        } 
     }
     
     /**
@@ -102,39 +107,71 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
      * something else bad happens.
      */
     function openFileForWrite(suggestedName, onComplete) {
-        return new Promise(function(resolve, reject) {
-            chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: suggestedName, 
-                    accepts: [{extensions: ['webm']}]}, function(fileEntry) {
-                var 
-                    error = chrome.runtime.lastError;
-                
-                if (error) {
-                    if (error.message == "User cancelled") {
-                        reject(null);
-                    } else {
-                        reject(error.message);
-                    }
-                } else {
-                    fileEntry.createWriter(function (fileWriter) {
-                        fileWriter.onerror = function (e) {
-                            console.error(e);
-                        };
-                        
-                        fileWriter.onwriteend = function() {
-                            fileWriter.onwriteend = null;
-                            
-                            resolve(fileWriter);
-                        };
-                        
-                        // If the file already existed then we need to truncate it to avoid doing a partial rewrite
-                        fileWriter.truncate(0);
-                    }, function (e) {
-                        // File is not readable or does not exist!
-                        reject(e);
-                    });
-                }
-            });
-        });
+    	
+    	if (isInsideChrome()) {
+    		
+	        return new Promise(function(resolve, reject) {
+	            chrome.fileSystem.chooseEntry({type: 'saveFile', suggestedName: suggestedName, 
+	                    accepts: [{extensions: ['webm']}]}, function(fileEntry) {
+	                var 
+	                    error = chrome.runtime.lastError;
+	                
+	                if (error) {
+	                    if (error.message == "User cancelled") {
+	                        reject(null);
+	                    } else {
+	                        reject(error.message);
+	                    }
+	                } else {
+	                    fileEntry.createWriter(function (fileWriter) {
+	                        fileWriter.onerror = function (e) {
+	                            console.error(e);
+	                        };
+	                        
+	                        fileWriter.onwriteend = function() {
+	                            fileWriter.onwriteend = null;
+	                            
+	                            resolve(fileWriter);
+	                        };
+	                        
+	                        // If the file already existed then we need to truncate it to avoid doing a partial rewrite
+	                        fileWriter.truncate(0);
+	                    }, function (e) {
+	                        // File is not readable or does not exist!
+	                        reject(e);
+	                    });
+	                }
+	            });
+	        });
+        
+	    // It's an electron app 
+    	} else {
+  
+    		    return new Promise(function(resolve, reject) {
+    	            dialog.showSaveDialog({
+    	                title: "Write video to file...",
+    	                defaultPath: suggestedName,
+    	                filters: [
+    	                    {
+    	                        name: "WebM video",
+    	                        extensions: ["webm"]
+    	                    }
+    	                ]
+    	            }, function(filename) {
+    	                if (!filename) {
+    	                    reject(null);
+    	                } else {
+    	                    fs.open(filename, "w", (err, fd) => {
+    	                        if (err) {
+    	                            reject(err);
+    	                        } else {
+    		                        resolve(fd);
+    	                        }
+    	                    });
+    	                }
+    	            });
+    	        });    		
+    	}
     }
 
     function notifyCompletion(success, frameCount) {
@@ -258,7 +295,11 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
         
         if (supportsFileWriter()) {
             openFileForWrite("video.webm").then(function(fileWriter) {
-                webMOptions.fileWriter = fileWriter;
+            	if (isInsideChrome()) {
+            	    webMOptions.fileWriter = fileWriter;
+            	} else {
+            	    webMOptions.fd = fileWriter;
+                }
                 
                 videoWriter = new WebMWriter(webMOptions);
                 renderChunk();

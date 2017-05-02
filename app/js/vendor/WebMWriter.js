@@ -655,9 +655,9 @@
         };
     };
 
-    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-	    module.exports = WebMWriter(require("./ArrayBufferDataStream"), require("./BlobBuffer"));
-    } else {
+/*    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+	    module.exports = WebMWriter(require("./js/vendor/ArrayBufferDataStream"), require("./js/vendor/BlobBuffer"));
+    } else {*/
 	    window.WebMWriter = WebMWriter(ArrayBufferDataStream, BlobBuffer);
-    }
+    //}
 })();

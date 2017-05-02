@@ -220,7 +220,8 @@
 	};
 	
 	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-		module.exports = BlobBuffer(require('fs'));
+		//module.exports = BlobBuffer(require('fs'));
+		window.BlobBuffer = BlobBuffer(require('fs'));
 	} else {
 		window.BlobBuffer = BlobBuffer(null);
 	}
