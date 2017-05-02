@@ -86,8 +86,15 @@ function FlightLogVideoRenderer(flightLog, logParameters, videoOptions, events) 
         }
     }
     
+    function isInsideChrome() {
+        return (typeof chrome !== 'undefined');
+    }
+
     function supportsFileWriter() {
-        return !!(chrome && chrome.fileSystem);
+        if (isInsideChrome()) {
+            return !!(chrome && chrome.fileSystem);
+        }
+        return false;
     }
     
     /**
