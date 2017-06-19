@@ -277,7 +277,7 @@ var FlightLogParser = function(logData) {
             digital_idle_value        : "digitalIdleOffset",
             dshot_idle_value          : "digitalIdleOffset",
             gyro_lowpass              : "gyro_lowpass_hz",
-            gyro_lowpass_type         : "gyro_lpf",
+            gyro_lowpass_type         : "gyro_soft_type",
             "gyro.scale"              : "gyro_scale",
             iterm_windup              : "itermWindupPointPercent",
             motor_pwm_protocol        : "fast_pwm_protocol",
