@@ -1068,7 +1068,7 @@ function BlackboxLogViewer() {
         $(".log-play-pause").click(logPlayPause);
         
         var logSyncHere = function() {
-            setVideoOffset(video.currentTime);
+            setVideoOffset(video.currentTime, true);
         };
         $(".log-sync-here").click(logSyncHere);
         
