@@ -930,6 +930,17 @@ function FlightLog(logData) {
 
         // Hide the header button if we are not using betaflight
         switch (this.getSysConfig().firmwareType) {
+            
+            case FIRMWARE_TYPE_CLEANFLIGHT:
+                // Only for versions 2.0 or above
+                if (semver.gte(this.getSysConfig().firmwareVersion, '2.0.0')) {
+                    $(".open-header-dialog").show()
+                } else {
+                    $(".open-header-dialog").hide()
+                }                    
+                break;
+            }
+            
             case FIRMWARE_TYPE_BETAFLIGHT:
             case FIRMWARE_TYPE_INAV:
                 $(".open-header-dialog").show()

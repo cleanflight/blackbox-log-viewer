@@ -645,8 +645,6 @@ var FlightLogParser = function(logData) {
 
             case "Firmware revision":
 
-                //TODO Unify this somehow...
-
                 // Extract the firmware revision in case of Betaflight/Raceflight/Cleanfligh 2.x/Other
                 var matches = fieldValue.match(/(.*flight).* (\d+)\.(\d+)(\.(\d+))*/i);
                 if(matches!=null) {

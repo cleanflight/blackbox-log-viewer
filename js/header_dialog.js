@@ -58,7 +58,18 @@ function HeaderDialog(dialog, onSave) {
 	        {name:'setpointRelaxRatio'			, type:FIRMWARE_TYPE_BETAFLIGHT,  min:'3.1.0', max:'999.9.9'},
             {name:'antiGravityGain'             , type:FIRMWARE_TYPE_BETAFLIGHT,  min:'3.1.0', max:'999.9.9'},
 	        {name:'antiGravityThreshold'        , type:FIRMWARE_TYPE_BETAFLIGHT,  min:'3.1.0', max:'999.9.9'},
-            {name:'itermWindupPointPercent'     , type:FIRMWARE_TYPE_BETAFLIGHT,  min:'3.1.0', max:'999.9.9'}
+            {name:'itermWindupPointPercent'     , type:FIRMWARE_TYPE_BETAFLIGHT,  min:'3.1.0', max:'999.9.9'},
+            
+            // Hide fields in Cleanflight. Header info only appears from Cleanflight 2.0.0 or above
+            {name:'dterm_average_count'         , type:FIRMWARE_TYPE_CLEANFLIGHT, min:'0.0.0', max:'1.14.2'},
+            {name:'dynamic_pid'                 , type:FIRMWARE_TYPE_CLEANFLIGHT, min:'0.0.0', max:'1.14.2'},
+            {name:'pidController'               , type:FIRMWARE_TYPE_CLEANFLIGHT, min:'0.0.0', max:'1.14.2'},
+            {name:'ptermSRateWeight'            , type:FIRMWARE_TYPE_CLEANFLIGHT, min:'0.0.0', max:'1.14.2'},
+            {name:'rc_smoothing'                , type:FIRMWARE_TYPE_CLEANFLIGHT, min:'0.0.0', max:'1.14.2'},
+            {name:'superExpoFactor'             , type:FIRMWARE_TYPE_CLEANFLIGHT, min:'0.0.0', max:'1.14.2'},
+            {name:'superExpoFactorYaw'          , type:FIRMWARE_TYPE_CLEANFLIGHT, min:'0.0.0', max:'1.14.2'},
+            {name:'superExpoYawMode'            , type:FIRMWARE_TYPE_CLEANFLIGHT, min:'0.0.0', max:'1.14.2'}
+            
 	];
 
 	function isParameterValid(name) {
@@ -232,36 +243,49 @@ function HeaderDialog(dialog, onSave) {
 
 
         // Add specific features for betaflight v2.8 onwards....
-		if (semver.gte(sysConfig.firmwareVersion, "2.8.0")) {
-			features.push(
-				{bit: 22, group: 'other', name: 'AIRMODE', description: 'Airmode always enabled, set off to use modes'}
-			);
+		if ((sysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT && semver.gte(sysConfig.firmwareVersion, "2.8.0")) ||
+		    (sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT && semver.gte(sysConfig.firmwareVersion, "2.0.0"))) {		    
+			    features.push(
+			            {bit: 22, group: 'other', name: 'AIRMODE', description: 'Airmode always enabled, set off to use modes'}
+			    );
 		}
 
-		if (semver.gte(sysConfig.firmwareVersion, "2.8.0") && !semver.gte(sysConfig.firmwareVersion, "3.0.0")) {
-			features.push(
-				{bit: 23, group: 'other', name: 'SUPEREXPO_RATES', description: 'Super Expo Mode'}
-			);
+		if (sysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT && 
+		    semver.gte(sysConfig.firmwareVersion, "2.8.0") && !semver.gte(sysConfig.firmwareVersion, "3.0.0")) {
+			    features.push(
+			            {bit: 23, group: 'other', name: 'SUPEREXPO_RATES', description: 'Super Expo Mode'}
+			    );
 		}
 
-        if (semver.gte(sysConfig.firmwareVersion, "2.8.0") && !semver.gte(sysConfig.firmwareVersion, "3.0.0")) {
-            features.push(
-                {bit: 18, group: 'other', name: 'ONESHOT125', description: 'Oneshot 125 Enabled'}
-            );
+        if (sysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT && 
+            semver.gte(sysConfig.firmwareVersion, "2.8.0") && !semver.gte(sysConfig.firmwareVersion, "3.0.0")) {
+                features.push(
+                        {bit: 18, group: 'other', name: 'ONESHOT125', description: 'Oneshot 125 Enabled'}
+                );
         }
 
-		if (semver.gte(sysConfig.firmwareVersion, "3.0.0")) {
-			features.push(
-				{bit: 18, group: 'other', name: 'OSD', description: 'On Screen Display'}
-			);
+		if ((sysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT && semver.gte(sysConfig.firmwareVersion, "3.0.0")) ||
+		    (sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT && semver.gte(sysConfig.firmwareVersion, "2.0.0"))) {
+			    features.push(
+			            {bit: 18, group: 'other', name: 'OSD', description: 'On Screen Display'}
+			    );
 		}
 
-		if (semver.gte(sysConfig.firmwareVersion, "3.1.0")) {
-			features.push(
-				{bit: 27, group: 'other', name: 'ESC_SENSOR', description: 'Use KISS ESC 24A telemetry as sensor'}
-			)
+		if ((sysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT && semver.gte(sysConfig.firmwareVersion, "3.1.0")) ||
+		    (sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT && semver.gte(sysConfig.firmwareVersion, "2.0.0"))) {
+			    features.push(
+			            {bit: 27, group: 'other', name: 'ESC_SENSOR', description: 'Use KISS ESC 24A telemetry as sensor'}
+			    )
 		}
 
+        if ((sysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT && semver.gte(sysConfig.firmwareVersion, "3.2.0")) ||
+            (sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT && semver.gte(sysConfig.firmwareVersion, "2.1.0"))) {
+                features.push(
+                    {bit: 29, group: 'other', name: 'DYNAMIC_FILTER', description: 'Dynamic Filter enabled'}
+                )
+        }
+        
+	      
         var radioGroups = [];
 
         var features_e = $('.features');
@@ -538,7 +562,8 @@ function HeaderDialog(dialog, onSave) {
         renderUnknownHeaders(sysConfig.unknownHeaders);
 
         /* Remove some version specific headers */
-        if(activeSysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT && semver.gte(activeSysConfig.firmwareVersion, '3.1.0')) {
+        if((activeSysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT && semver.gte(activeSysConfig.firmwareVersion, '3.1.0'))
+           || (activeSysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT && semver.gte(activeSysConfig.firmwareVersion, '2.0.0'))) {
             $(".BFPIDController").css("display","none");
         } else {
             $(".BFPIDController").css("display","table-header-group");
@@ -550,6 +575,7 @@ function HeaderDialog(dialog, onSave) {
 		 if (sysConfig.firmwareType == FIRMWARE_TYPE_INAV) {
 			 $(".no-inav").hide();
 			 $(".bf-only").hide();
+			 $(".cf-only").hide();
 		 }
 
     }
