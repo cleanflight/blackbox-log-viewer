@@ -542,9 +542,9 @@ var FlightLogParser = function(logData) {
             case "yawRateAccelLimit":
             case "rateAccelLimit":
             case "anti_gravity_gain":
-                if((that.sysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT  && semver.gte(that.sysConfig.firmwareVersion, '3.1.0')) ||
-                   (that.sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT && semver.gte(that.sysConfig.firmwareVersion, '2.0.0'))) {
-                    that.sysConfig[fieldName] = uint32ToFloat(fieldValue, 10);
+                if (that.sysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT  && 
+                    semver.gte(that.sysConfig.firmwareVersion, '3.1.0') && semver.lt(that.sysConfig.firmwareVersion, '3.1.7')) {
+                    that.sysConfig[fieldName] = uint32ToFloat(fieldValue);                    
                 } else {
                     that.sysConfig[fieldName] = parseInt(fieldValue, 10);
                 }
