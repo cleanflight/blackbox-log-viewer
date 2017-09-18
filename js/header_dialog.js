@@ -569,6 +569,15 @@ function HeaderDialog(dialog, onSave) {
             $(".BFPIDController").css("display","table-header-group");
         }
 
+        /* Remove DSHOT */        
+        if (sysConfig.fast_pwm_protocol < FAST_PROTOCOL.indexOf("DSHOT150")) {
+            $(".headerDigitalParameters").css("display","none");
+            $(".headerAnalogParameters").css("display","");
+        } else {
+            $(".headerDigitalParameters").css("display","");
+            $(".headerAnalogParameters").css("display","none");
+        }
+        
 		/*
 		 * In case of INAV, hide irrelevant options
 		 */
