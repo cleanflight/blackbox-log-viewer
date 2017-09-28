@@ -538,7 +538,14 @@ function HeaderDialog(dialog, onSave) {
 		setParameter('motorOutputLow'			,sysConfig.motorOutput[0],0);
 		setParameter('motorOutputHigh'			,sysConfig.motorOutput[1],0);
 		setParameter('digitalIdleOffset'		,sysConfig.digitalIdleOffset,2);
-        setParameter('antiGravityGain'          ,sysConfig.anti_gravity_gain,0);
+		
+        if ((sysConfig.firmwareType == FIRMWARE_TYPE_BETAFLIGHT && semver.gte(sysConfig.firmwareVersion, "3.1.7")) ||
+            (sysConfig.firmwareType == FIRMWARE_TYPE_CLEANFLIGHT && semver.gte(sysConfig.firmwareVersion, "2.0.0"))) {  
+            setParameter('antiGravityGain'      ,sysConfig.anti_gravity_gain,3);
+        } else {
+            setParameter('antiGravityGain'      ,sysConfig.anti_gravity_gain,0);
+        }
+        
         setParameter('antiGravityThreshold'     ,sysConfig.anti_gravity_threshold,0);
         setParameter('setpointRelaxRatio'		,sysConfig.setpointRelaxRatio,2);
 
