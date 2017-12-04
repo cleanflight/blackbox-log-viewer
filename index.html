@@ -27,27 +27,7 @@
                 <p>This tool allows you to view and analyze logs created by Cleanflight's and Betaflight's Blackbox feature.</p>
                 <span class="btn btn-primary btn-lg btn-file"  data-toggle="tooltip" title="Start by opening a log or video file"> Open log file/video <input type="file" class="file-open" multiple></span>
             </div>
-
-            <!-- Hidden by the moment -->
-            <div class="alert alert-warning" role="alert" style="display: none;">
-                <p>
-                    <a href="https://blog.chromium.org/2016/08/from-chrome-apps-to-web.html" target="_blank">Google Chrome is dropping support
-                    for "Chrome Apps"</a> like this one, so this Chrome version of Blackbox Explorer will stop working sometime in late 2017.
-                </p>
-                <p>
-                    To replace it, we've developed a new desktop app version of Blackbox Explorer for Windows, macOS and Linux (.deb).
-                </p>
-                <p>
-                    <a href="https://github.com/cleanflight/blackbox-log-viewer/releases" target="_blank">Please install the latest release
-                    of this new app from our GitHub page!</a>
-                </p>
-                <p>
-                    The new app has all the same features as this version of Blackbox Explorer. In the future we
-                    will able to add new features that were not possible with the old Chrome App, particularly with video export.
-                </p>
-            </div>
         </div>
-
         <div class="container">
             <div class="row">
                 <div class="col-sm-4">
@@ -1645,7 +1625,7 @@
             </div>
         </div>
     </div>
-	<!-- Scripts -->
+    <!-- Scripts -->
     <script src="js/complex.js"></script>
     <script src="js/real.js"></script>
     <script src="js/vendor/jquery-1.11.3.min.js"></script>
@@ -1676,15 +1656,31 @@
     <script src="js/graph_legend.js"></script>
     <script src="js/graph_config_dialog.js"></script>
     <script src="js/graph_spectrum.js"></script>
+    <script src="js/gui.js"></script>
     <script src="js/header_dialog.js"></script>
     <script src="js/keys_dialog.js"></script>
     <script src="js/user_settings_dialog.js"></script>
+    <script src="js/release_checker.js"></script>
     <script src="js/seekbar.js"></script>
     <script src="js/video_export_dialog.js"></script>
     <script src="js/flightlog_video_renderer.js"></script>
     <script src="js/graph_config.js"></script>
     <script src="js/configuration.js"></script>
     <script src="js/laptimer.js"></script>
+    <script src="js/localization.js"></script>
     <script src="js/main.js"></script>
+    <script src="index.js"></script>
+
+    <dialog class="dialogUpdate">
+        <h3 i18n="noticeTitle"></h3>
+        <div class="content">
+            <div class="dialogUpdate-content" style="margin-top: 10px;margin-bottom: 10px;"></div>
+        </div>
+        <div class="buttons">
+            <a href="#" class="dialogUpdate-websitebtn regular-button" i18n="updateWebsite"></a>
+            <a href="#" class="dialogUpdate-closebtn regular-button" i18n="close"></a>
+        </div>
+    </dialog>
+
 </body>
 </html>
