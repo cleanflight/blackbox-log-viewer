@@ -98,7 +98,7 @@ function getRunDebugAppCommand() {
 }
 
 function get_release_filename(platform, ext) {
-    return 'Betaflight-BlackboxExplorer_' + platform + '_' + pkg.version + '.' + ext;
+    return 'Cleanflight-BlackboxExplorer_' + platform + '_' + pkg.version + '.' + ext;
 }
 
 // -----------------
@@ -227,9 +227,9 @@ gulp.task('apps', ['dist', 'clean-apps'], function (done) {
         buildDir: appsDir,
         platforms: platforms,
         flavor: 'normal',
-        macIcns: './images/bf_icon.icns',
-        macPlist: { 'CFBundleDisplayName': 'Betaflight Blackbox Explorer'},
-        winIco: './images/bf_icon.ico',
+        macIcns: './images/cf_icon.icns',
+        macPlist: { 'CFBundleDisplayName': 'Cleanflight Blackbox Explorer'},
+        winIco: './images/cf_icon.ico',
     });
     builder.on('log', console.log);
     builder.build(function (err) {
@@ -258,9 +258,9 @@ gulp.task('debug', ['dist', 'clean-debug'], function (done) {
         buildDir: debugDir,
         platforms: platforms,
         flavor: 'sdk',
-        macIcns: './images/bf_icon.icns',
-        macPlist: { 'CFBundleDisplayName': 'Betaflight Blackbox Explorer'},
-        winIco: './images/bf_icon.ico',
+        macIcns: './images/cf_icon.icns',
+        macPlist: { 'CFBundleDisplayName': 'Cleanflight Blackbox Explorer'},
+        winIco: './images/cf_icon.ico',
     });
     builder.on('log', console.log);
     builder.build(function (err) {
@@ -330,7 +330,7 @@ function release_win32() {
     archive.on('warning', function (err) { throw err; });
     archive.on('error', function (err) { throw err; });
     archive.pipe(output);
-    archive.directory(src, 'Betaflight Blackbox Explorer');
+    archive.directory(src, 'Cleanflight Blackbox Explorer');
     return archive.finalize();
 }
 
@@ -344,7 +344,7 @@ function release_linux64() {
     archive.on('warning', function (err) { throw err; });
     archive.on('error', function (err) { throw err; });
     archive.pipe(output);
-    archive.directory(src, 'Betaflight Blackbox Explorer');
+    archive.directory(src, 'Cleanflight Blackbox Explorer');
     return archive.finalize();
 }
 
@@ -374,7 +374,7 @@ function release_osx64() {
                 title: 'BF Blackbox Explorer', // <= volume name; should be smaller than 27 chars.
                 contents: [
                     { 'x': 448, 'y': 342, 'type': 'link', 'path': '/Applications' },
-                    { 'x': 192, 'y': 344, 'type': 'file', 'path': pkg.name + '.app', 'name': 'Betaflight Blackbox Explorer.app' }
+                    { 'x': 192, 'y': 344, 'type': 'file', 'path': pkg.name + '.app', 'name': 'Cleanflight Blackbox Explorer.app' }
                 ],
                 background: path.join(__dirname, 'images/dmg-background.png'),
                 format: 'UDZO',
