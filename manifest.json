@@ -1,8 +1,9 @@
 {
   "name": "CleanFlight - Blackbox Explorer",
   "description": "Interactive flight log viewer for CleanFlight/Betaflight and others",
-  "version": "3.0.0-rc1",
+  "version": "3.0.0",
   "manifest_version": 2,
+  "default_locale": "en",
   "app": {
     "background": {
       "scripts": ["background.js"]
@@ -12,5 +13,5 @@
        {"fileSystem": ["write"]},
        "storage"
    ],
-  "icons": { "128": "images/icon-128.png" }
+  "icons": { "128": "images/cf_icon_128.png" }
 }

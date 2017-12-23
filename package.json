@@ -1,7 +1,7 @@
 {
-  "name": "betaflight-blackbox-explorer",
-  "displayName": "Betaflight - Blackbox Explorer",
-  "description": "Crossplatform blackbox analitics tool for Betaflight flight control system.",
+  "name": "cleanflight-blackbox-explorer",
+  "displayName": "Cleanflight - Blackbox Explorer",
+  "description": "Interactive flight log viewer for CleanFlight/Betaflight and others",
   "version": "3.0.0-rc1",
   "main": "main_nwjs.html",
   "bg-script": "background.js",
@@ -13,13 +13,14 @@
     "gulp": "gulp"
   },
   "window": {
-    "show": true
+    "show": true,
+    "icon": "images/cf_icon_128.png"
   },
   "repository": {
     "type": "git",
-    "url": "github.com/betaflight/blackbox-log-viewer"
+    "url": "github.com/cleanflight/blackbox-log-viewer"
   },
-  "author": "The Betaflight open source project.",
+  "author": "The Cleanflight open source project.",
   "license": "GPL-3.0",
   "dependencies": {},
   "devDependencies": {

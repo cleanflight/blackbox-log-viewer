@@ -4,7 +4,7 @@ $(document).ready(function () {
 });
 
 function checkForConfiguratorUpdates() {
-    var releaseChecker = new ReleaseChecker('configurator', 'https://api.github.com/repos/betaflight/blackbox-log-viewer/releases');
+    var releaseChecker = new ReleaseChecker('configurator', 'https://api.github.com/repos/cleanflight/blackbox-log-viewer/releases');
 
     releaseChecker.loadReleaseData(notifyOutdatedVersion);
 }
