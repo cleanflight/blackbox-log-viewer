@@ -2,7 +2,7 @@
   "name": "cleanflight-blackbox-explorer",
   "displayName": "Cleanflight - Blackbox Explorer",
   "description": "Interactive flight log viewer for cleanFlight/betaflight and others",
-  "version": "3.0.0-rc1",
+  "version": "3.0.0",
   "main": "main_nwjs.html",
   "bg-script": "background.js",
   "default_locale": "en",
