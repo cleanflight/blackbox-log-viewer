@@ -252,7 +252,8 @@ var
     ]);
 
 function adjustFieldDefsList(firmwareType, firmwareVersion) {
-    if((firmwareType == FIRMWARE_TYPE_BETAFLIGHT) && semver.gte(firmwareVersion, '3.3.0')) {
+    if(((firmwareType == FIRMWARE_TYPE_BETAFLIGHT) && semver.gte(firmwareVersion, '3.3.0')) || 
+       ((firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) && semver.gte(firmwareVersion, '2.2.0'))) {
         DEBUG_MODE = DEBUG_MODE_COMPLETE.slice(0);
         DEBUG_MODE.splice(DEBUG_MODE.indexOf('MIXER'),        1);
         DEBUG_MODE.splice(DEBUG_MODE.indexOf('AIRMODE'),      1);
